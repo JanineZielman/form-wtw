@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Checklist Poster</title>
+<style>
+  body { margin:0; font-family:sans-serif; background:#f2f3f5; }
+  .container { display:grid; grid-template-columns:1fr 1.8fr; height:100vh; padding:20px; gap:20px; }
+  .panel { background:#fff; border-radius:14px; padding:20px; overflow-y:auto; box-shadow:0 3px 10px rgba(0,0,0,0.08); }
+  .category { border:1px solid #ddd; border-radius:10px; padding:12px; margin-bottom:14px; }
+  .category-title { font-weight:bold; margin-bottom:8px; }
+  .poster-row { display:flex; }
+  .poster-item { width:25%; aspect-ratio:1/1; border-radius:50%; overflow:hidden; transform:rotate(0deg); transition:transform 0.5s ease; }
+  .poster-item .half { width:100%; height:50%; }
+  /* Category colors */
+  .poster-row:nth-child(1) .poster-item .half{ background-color: rgb(255,106,0); }
+  .poster-row:nth-child(2) .poster-item .half{ background-color: rgb(33,72,66); }
+  .poster-row:nth-child(3) .poster-item .half{ background-color: rgb(234,130,255); }
+  .poster-row:nth-child(4) .poster-item .half{ background-color: rgb(38,0,255); }
+  .poster-row:nth-child(5) .poster-item .half{ background-color: rgb(253,255,1); }
+  .poster-row:nth-child(6) .poster-item .half{ background-color: rgb(116,92,43); }
+  @media print{ .container{ display: block; padding: 0; gap: 0; background-color: transparent; width: 100vw; height: 100vh; overflow: hidden; } #formPanel{ display: none; } #posterPanel{ width: 100%; padding: 0; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="panel" id="formPanel"></div>
+  <div class="panel" id="posterPanel"></div>
+</div>
+
+<script>
+const DATA = {
+  "Website ontwikkeling":["Gebruikt alleen scripts die noodzakelijk en efficiënt","Onnodige, dubbele, inefficiënte code vermijden","Gebruik minder JavaScript (CSS waar mogelijk)","Gebruik Open source waar mogelijk"],
+  "UX design":["Minimaliseer onnodige interacties","SEO / Core Web Vitals optimaliseren","Heldere navigatie","Data cleanup / onderhoud routine"],
+  "Hosting":["Groene hosting","Caching & CDN","Efficiënte serverconfiguraties"],
+  "Typografie":["Gebruik systeemfonts","Font-display: swap"],
+  "Media":["Gebruik WebP/AVIF","Lazy-load images","Geen overbodige hoge resoluties","Verminder het gebruik van video"],
+  "Kleurgebruik":["Donkere kleuren besparen energie (OLED)","Contrast en toegankelijkheid"]
+};
+
+const formPanel = document.getElementById("formPanel");
+const posterPanel = document.getElementById("posterPanel");
+
+function render() {
+  formPanel.innerHTML = "<h2>Checklist</h2>";
+  posterPanel.innerHTML = "";
+
+  Object.keys(DATA).forEach((cat, ci) => {
+    const div = document.createElement("div");
+    div.className = "category";
+    div.innerHTML = `<div class="category-title">${cat}</div>`;
+    formPanel.appendChild(div);
+
+    const posterRow = document.createElement("div");
+    posterRow.className = "poster-row";
+
+    // Collect checked items
+    const checkedIndices = [];
+
+    DATA[cat].forEach((item, ii) => {
+      const key = `${ci}-${ii}`;
+      const checked = localStorage.getItem(key) === "true";
+      if(checked) checkedIndices.push(ii);
+
+      // Checklist checkbox
+      const row = document.createElement("label");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.gap = "6px";
+      row.innerHTML = `<input type="checkbox" data-key="${key}" ${checked?"checked":""}/><span>${item}</span>`;
+      div.appendChild(row);
+
+      // Poster div
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "poster-item";
+      if(checked){
+        const half = document.createElement("div");
+        half.className = "half";
+        itemDiv.appendChild(half);
+      }
+      posterRow.appendChild(itemDiv);
+    });
+
+    // Apply rotation to checked items
+    const doneCount = checkedIndices.length;
+    if(doneCount > 0){
+      const rotationStep = doneCount * 45;
+      checkedIndices.forEach((idx,i)=>{
+        const itemDiv = posterRow.children[idx];
+        itemDiv.style.transform = `rotate(${rotationStep*i}deg)`;
+      });
+    }
+
+    posterPanel.appendChild(posterRow);
+  });
+
+  document.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+    cb.addEventListener("change", e=>{
+      const key = e.target.dataset.key;
+      localStorage.setItem(key,e.target.checked);
+      render();
+    });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
