@@ -1,110 +1,210 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="nl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Checklist Poster</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Checklist → Badge Generator</title>
 <style>
-  body { margin:0; font-family:sans-serif; background:#f2f3f5; }
-  .container { display:grid; grid-template-columns:1fr 1.8fr; height:100vh; padding:20px; gap:20px; }
-  .panel { background:#fff; border-radius:14px; padding:20px; overflow-y:auto; box-shadow:0 3px 10px rgba(0,0,0,0.08); }
-  .category { border:1px solid #ddd; border-radius:10px; padding:12px; margin-bottom:14px; }
-  .category-title { font-weight:bold; margin-bottom:8px; }
-  .poster-row { display:flex; }
-  .poster-item { width:25%; aspect-ratio:1/1; border-radius:50%; overflow:hidden; transform:rotate(0deg); transition:transform 0.5s ease; }
-  .poster-item .half { width:100%; height:50%; }
-  /* Category colors */
-  .poster-row:nth-child(1) .poster-item .half{ background-color: rgb(255,106,0); }
-  .poster-row:nth-child(2) .poster-item .half{ background-color: rgb(33,72,66); }
-  .poster-row:nth-child(3) .poster-item .half{ background-color: rgb(234,130,255); }
-  .poster-row:nth-child(4) .poster-item .half{ background-color: rgb(38,0,255); }
-  .poster-row:nth-child(5) .poster-item .half{ background-color: rgb(253,255,1); }
-  .poster-row:nth-child(6) .poster-item .half{ background-color: rgb(116,92,43); }
-  @media print{ .container{ display: block; padding: 0; gap: 0; background-color: transparent; width: 100vw; height: 100vh; overflow: hidden; } #formPanel{ display: none; } #posterPanel{ width: 100%; padding: 0; } }
+  body{
+    margin:0;
+    background:#000;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: rgb(229, 219, 219);
+  }
+  .wrap{
+    display: flex;
+    flex-direction: column;
+    max-width: 1200px;
+    position: relative;
+    border: 1px solid rgb(229, 219, 219);
+    border-radius: 25px;
+  }
+  .panel{
+    background-color: transparent;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.08);
+    color: rgb(229, 219, 219);
+  }
+  .panel-checklist #checklist{
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+  }
+  #checklist .category{
+    width: 19%;
+    box-sizing: border-box;
+  }
+  h1{
+    font-size:48px;
+    margin:0 0 14px;
+  }
+  .category{border:1px solid rgb(229, 219, 219);border-radius:8px;padding:12px;margin-bottom:12px;}
+  .title{font-weight:600;margin-bottom:14px;}
+  label.item{display:flex;gap:8px;margin:6px 0;cursor:pointer;font-size:14px;}
+  .controls{margin-top:14px;display:flex;gap:10px;}
+  button{padding:7px 12px;border-radius:6px;border:0;cursor:pointer;background:#111;color:#fff;}
+  .ghost{background:rgb(229, 219, 219);color:#111;border:1px solid rgb(229, 219, 219);}
+
+  .badge-preview{display:flex;justify-content:center;align-items:flex-start;}
+  svg{width:100%;height:auto;display:block; border: 1px solid black;}
+  .cell{
+    fill:#ffffff;
+    transition:fill-opacity .25s ease;
+    stroke: black; 
+    stroke-width: 1px;
+  }
+  .cell.revealed{
+    fill-opacity:0;
+     stroke-width: 0;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="panel" id="formPanel"></div>
-  <div class="panel" id="posterPanel"></div>
+    <h1>Sustainability Checklist</h1>
+<div class="wrap">
+  <!-- LEFT: CHECKLIST -->
+  <div class="panel panel-checklist">
+    <div id="checklist"></div>
+    <div class="controls">
+      <button id="downloadBtn">Download PNG</button>
+      <button id="resetBtn" class="ghost">Reset</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: BADGE -->
+  <div class="panel badge-preview">
+    <svg id="badge" viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="row0" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#8f64f1"/>
+          <stop offset="100%" stop-color="#e8b3ba"/>
+        </linearGradient>
+        <linearGradient id="row1" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#f17b33"/>
+          <stop offset="100%" stop-color="#c9ab65"/>
+        </linearGradient>
+        <linearGradient id="row2" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#a0c628"/>
+          <stop offset="100%" stop-color="#d0b6a3"/>
+        </linearGradient>
+      </defs>
+
+      <!-- 3 gradient row bands (full width, 30px each) -->
+      <rect x="0" y="0" width="300" height="30" fill="url(#row0)" stroke="black" stroke-width="1"/>
+      <rect x="0" y="30" width="300" height="30" fill="url(#row1)" stroke="black" stroke-width="1"/>
+      <rect x="0" y="60" width="300" height="30" fill="url(#row2)" stroke="black" stroke-width="1"/>
+
+      <!-- White overlay cells: 5 columns @ 60×30 each -->
+      <!-- Row 0 -->
+      <rect id="cell-0-0" class="cell" x="0"   y="0" width="60" height="30"/>
+      <rect id="cell-0-1" class="cell" x="60"  y="0" width="60" height="30"/>
+      <rect id="cell-0-2" class="cell" x="120" y="0" width="60" height="30"/>
+      <rect id="cell-0-3" class="cell" x="180" y="0" width="60" height="30"/>
+      <rect id="cell-0-4" class="cell" x="240" y="0" width="60" height="30"/>
+
+      <!-- Row 1 -->
+      <rect id="cell-1-0" class="cell" x="0"   y="30" width="60" height="30"/>
+      <rect id="cell-1-1" class="cell" x="60"  y="30" width="60" height="30"/>
+      <rect id="cell-1-2" class="cell" x="120" y="30" width="60" height="30"/>
+      <rect id="cell-1-3" class="cell" x="180" y="30" width="60" height="30"/>
+      <rect id="cell-1-4" class="cell" x="240" y="30" width="60" height="30"/>
+
+      <!-- Row 2 -->
+      <rect id="cell-2-0" class="cell" x="0"   y="60" width="60" height="30"/>
+      <rect id="cell-2-1" class="cell" x="60"  y="60" width="60" height="30"/>
+      <rect id="cell-2-2" class="cell" x="120" y="60" width="60" height="30"/>
+      <rect id="cell-2-3" class="cell" x="180" y="60" width="60" height="30"/>
+      <rect id="cell-2-4" class="cell" x="240" y="60" width="60" height="30"/>
+    </svg>
+  </div>
 </div>
 
 <script>
-const DATA = {
-  "Website ontwikkeling":["Gebruikt alleen scripts die noodzakelijk en efficiënt","Onnodige, dubbele, inefficiënte code vermijden","Gebruik minder JavaScript (CSS waar mogelijk)","Gebruik Open source waar mogelijk"],
-  "UX design":["Minimaliseer onnodige interacties","SEO / Core Web Vitals optimaliseren","Heldere navigatie","Data cleanup / onderhoud routine"],
-  "Hosting":["Groene hosting","Caching & CDN","Efficiënte serverconfiguraties"],
-  "Typografie":["Gebruik systeemfonts","Font-display: swap"],
-  "Media":["Gebruik WebP/AVIF","Lazy-load images","Geen overbodige hoge resoluties","Verminder het gebruik van video"],
-  "Kleurgebruik":["Donkere kleuren besparen energie (OLED)","Contrast en toegankelijkheid"]
-};
+// same order as columns left-to-right:
+const DATA = [
+  // Category: Content & UX
+  [
+    "Minimaliseer niet-essentiële content", 
+    "Heldere navigatie & formulieren",
+    "Minder tijd nodig = duurzamer"
+  ],
+  // Techniek & Code
+  [
+    "Gebruik alleen efficiënte scripts",
+    "Verminder JavaScript / rommel",
+    "Gebruik open source waar mogelijk"
+  ],
+  // Afbeeldingen & Media
+  [
+    "Optimaliseer afbeeldingen",
+    "Gebruik lazy loading",
+    "Verminder video-gebruik"
+  ],
+  // Hosting & Infrastructuur
+  [
+    "Groene hosting",
+    "Overweeg statische sites / CDN",
+    "Plan een cleaning dag"
+  ],
+  // Typografie & Kleurgebruik
+  [
+    "Gebruik systeemfonts",
+    "Vermijd zware contrasten",
+    "Gebruik energiezuinige kleuren"
+  ]
+];
 
-const formPanel = document.getElementById("formPanel");
-const posterPanel = document.getElementById("posterPanel");
-
-function render() {
-  formPanel.innerHTML = "<h2>Checklist</h2>";
-  posterPanel.innerHTML = "";
-
-  Object.keys(DATA).forEach((cat, ci) => {
-    const div = document.createElement("div");
-    div.className = "category";
-    div.innerHTML = `<div class="category-title">${cat}</div>`;
-    formPanel.appendChild(div);
-
-    const posterRow = document.createElement("div");
-    posterRow.className = "poster-row";
-
-    // Collect checked items
-    const checkedIndices = [];
-
-    DATA[cat].forEach((item, ii) => {
-      const key = `${ci}-${ii}`;
-      const checked = localStorage.getItem(key) === "true";
-      if(checked) checkedIndices.push(ii);
-
-      // Checklist checkbox
-      const row = document.createElement("label");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "6px";
-      row.innerHTML = `<input type="checkbox" data-key="${key}" ${checked?"checked":""}/><span>${item}</span>`;
-      div.appendChild(row);
-
-      // Poster div
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "poster-item";
-      if(checked){
-        const half = document.createElement("div");
-        half.className = "half";
-        itemDiv.appendChild(half);
-      }
-      posterRow.appendChild(itemDiv);
+const checklist = document.getElementById("checklist");
+function renderChecklist(){
+  checklist.innerHTML = "";
+  DATA.forEach((col, c)=>{
+    const div=document.createElement("div");
+    div.className="category";
+    div.innerHTML=`<div class="title">Categorie ${c+1}</div>`;
+    col.forEach((text, r)=>{
+      const key=`${r}-${c}`;
+      const checked=localStorage.getItem(key)==="1";
+      div.innerHTML+=`
+        <label class="item"><input type="checkbox" data-key="${key}" ${checked?"checked":""}/> ${text}</label>`;
     });
-
-    // Apply rotation to checked items
-    const doneCount = checkedIndices.length;
-    if(doneCount > 0){
-      const rotationStep = doneCount * 45;
-      checkedIndices.forEach((idx,i)=>{
-        const itemDiv = posterRow.children[idx];
-        itemDiv.style.transform = `rotate(${rotationStep*i}deg)`;
-      });
-    }
-
-    posterPanel.appendChild(posterRow);
+    checklist.appendChild(div);
   });
-
-  document.querySelectorAll("input[type=checkbox]").forEach(cb=>{
-    cb.addEventListener("change", e=>{
-      const key = e.target.dataset.key;
-      localStorage.setItem(key,e.target.checked);
-      render();
+  document.querySelectorAll("input[data-key]").forEach(cb=>{
+    cb.addEventListener("change",()=>{
+      localStorage.setItem(cb.dataset.key, cb.checked?"1":"0");
+      updateBadge();
     });
   });
 }
 
-render();
+function updateBadge(){
+  for(let r=0;r<3;r++){
+    for(let c=0;c<5;c++){
+      const cell=document.getElementById(`cell-${r}-${c}`);
+      const on=localStorage.getItem(`${r}-${c}`)==="1";
+      cell.classList.toggle("revealed", on);
+    }
+  }
+}
+
+document.getElementById("resetBtn").onclick = ()=>{
+  if(confirm("Reset badge?")){
+    localStorage.clear();
+    renderChecklist();
+    updateBadge();
+  }
+};
+
+renderChecklist();
+updateBadge();
 </script>
+
 </body>
 </html>
