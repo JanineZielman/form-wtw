@@ -7,29 +7,29 @@
 <style>
   body{
     margin:0;
-    background:#000;
+    background:#707070;
     font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: rgb(229, 219, 219);
+    color: #000;
+    padding-top: 24px;
   }
   .wrap{
     display: flex;
     flex-direction: column;
     max-width: 1200px;
     position: relative;
-    border: 1px solid rgb(229, 219, 219);
+    /* border: 1px solid rgb(229, 219, 219); */
     border-radius: 25px;
+    padding: 20px;
   }
   .panel{
     background-color: transparent;
-    border-radius:12px;
     padding:20px;
-    box-shadow:0 4px 18px rgba(0,0,0,0.08);
-    color: rgb(229, 219, 219);
+    border-bottom: 1px solid black;
   }
   .panel-checklist #checklist{
     display: flex;
@@ -45,137 +45,317 @@
     font-size:48px;
     margin:0 0 14px;
   }
-  .category{border:1px solid rgb(229, 219, 219);border-radius:8px;padding:12px;margin-bottom:12px;}
+  .category{
+    /* border:1px solid rgb(229, 219, 219); */
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:12px;
+  }
   .title{font-weight:600;margin-bottom:14px;}
   label.item{display:flex;gap:8px;margin:6px 0;cursor:pointer;font-size:14px;}
   .controls{margin-top:14px;display:flex;gap:10px;}
   button{padding:7px 12px;border-radius:6px;border:0;cursor:pointer;background:#111;color:#fff;}
-  .ghost{background:rgb(229, 219, 219);color:#111;border:1px solid rgb(229, 219, 219);}
+  .badge-preview{display:flex;justify-content:center;align-items:flex-start;margin-top:20px;}
+  svg{width:600px;height:600px;display:block; border: 0px solid black;}
 
-  .badge-preview{display:flex;justify-content:center;align-items:flex-start;}
-  svg{width:100%;height:auto;display:block; border: 1px solid black;}
-  .cell{
-    fill:#ffffff;
-    transition:fill-opacity .25s ease;
-    stroke: black; 
-    stroke-width: 1px;
-  }
-  .cell.revealed{
-    fill-opacity:0;
-     stroke-width: 0;
-  }
+  /* SPIN ANIMATION */
+@keyframes spinBadge {
+  0% { transform: rotate(0deg); }
+  50%   { transform: rotate(180deg); }
+  100%   { transform: rotate(1080deg); }
+}
+
+#badge.spinning {
+  animation: spinBadge 2s ease infinite;
+  transform-origin: 300px 300px; /* center of the SVG */
+}
+
 </style>
 </head>
 <body>
-    <h1>Sustainability Checklist</h1>
+<h1>Sustainability Checklist</h1>
 <div class="wrap">
-  <!-- LEFT: CHECKLIST -->
   <div class="panel panel-checklist">
     <div id="checklist"></div>
     <div class="controls">
-      <button id="downloadBtn">Download PNG</button>
       <button id="resetBtn" class="ghost">Reset</button>
     </div>
   </div>
 
-  <!-- RIGHT: BADGE -->
   <div class="panel badge-preview">
-    <svg id="badge" viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="row0" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#8f64f1"/>
-          <stop offset="100%" stop-color="#e8b3ba"/>
-        </linearGradient>
-        <linearGradient id="row1" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#f17b33"/>
-          <stop offset="100%" stop-color="#c9ab65"/>
-        </linearGradient>
-        <linearGradient id="row2" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#a0c628"/>
-          <stop offset="100%" stop-color="#d0b6a3"/>
-        </linearGradient>
-      </defs>
-
-      <!-- 3 gradient row bands (full width, 30px each) -->
-      <rect x="0" y="0" width="300" height="30" fill="url(#row0)" stroke="black" stroke-width="1"/>
-      <rect x="0" y="30" width="300" height="30" fill="url(#row1)" stroke="black" stroke-width="1"/>
-      <rect x="0" y="60" width="300" height="30" fill="url(#row2)" stroke="black" stroke-width="1"/>
-
-      <!-- White overlay cells: 5 columns @ 60×30 each -->
-      <!-- Row 0 -->
-      <rect id="cell-0-0" class="cell" x="0"   y="0" width="60" height="30"/>
-      <rect id="cell-0-1" class="cell" x="60"  y="0" width="60" height="30"/>
-      <rect id="cell-0-2" class="cell" x="120" y="0" width="60" height="30"/>
-      <rect id="cell-0-3" class="cell" x="180" y="0" width="60" height="30"/>
-      <rect id="cell-0-4" class="cell" x="240" y="0" width="60" height="30"/>
-
-      <!-- Row 1 -->
-      <rect id="cell-1-0" class="cell" x="0"   y="30" width="60" height="30"/>
-      <rect id="cell-1-1" class="cell" x="60"  y="30" width="60" height="30"/>
-      <rect id="cell-1-2" class="cell" x="120" y="30" width="60" height="30"/>
-      <rect id="cell-1-3" class="cell" x="180" y="30" width="60" height="30"/>
-      <rect id="cell-1-4" class="cell" x="240" y="30" width="60" height="30"/>
-
-      <!-- Row 2 -->
-      <rect id="cell-2-0" class="cell" x="0"   y="60" width="60" height="30"/>
-      <rect id="cell-2-1" class="cell" x="60"  y="60" width="60" height="30"/>
-      <rect id="cell-2-2" class="cell" x="120" y="60" width="60" height="30"/>
-      <rect id="cell-2-3" class="cell" x="180" y="60" width="60" height="30"/>
-      <rect id="cell-2-4" class="cell" x="240" y="60" width="60" height="30"/>
-    </svg>
+    <svg id="badge" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
 </div>
 
 <script>
-// same order as columns left-to-right:
+/* ------------------------ CHECKLIST DATA ------------------------ */
+
 const DATA = [
-  // Category: Content & UX
-  [
-    "Minimaliseer niet-essentiële content", 
-    "Heldere navigatie & formulieren",
-    "Minder tijd nodig = duurzamer"
-  ],
-  // Techniek & Code
-  [
-    "Gebruik alleen efficiënte scripts",
-    "Verminder JavaScript / rommel",
-    "Gebruik open source waar mogelijk"
-  ],
-  // Afbeeldingen & Media
-  [
-    "Optimaliseer afbeeldingen",
-    "Gebruik lazy loading",
-    "Verminder video-gebruik"
-  ],
-  // Hosting & Infrastructuur
-  [
-    "Groene hosting",
-    "Overweeg statische sites / CDN",
-    "Plan een cleaning dag"
-  ],
-  // Typografie & Kleurgebruik
-  [
-    "Gebruik systeemfonts",
-    "Vermijd zware contrasten",
-    "Gebruik energiezuinige kleuren"
-  ]
+  ["Minimaliseer niet-essentiële content","Heldere navigatie & formulieren","Minder tijd nodig = duurzamer"],
+  ["Gebruik alleen efficiënte scripts","Verminder JavaScript / rommel","Gebruik open source waar mogelijk"],
+  ["Optimaliseer afbeeldingen","Gebruik lazy loading","Verminder video-gebruik"],
+  ["Groene hosting","Overweeg statische sites / CDN","Plan een cleaning dag"],
+  ["Gebruik systeemfonts","Vermijd zware contrasten","Gebruik energiezuinige kleuren"]
 ];
 
+/* ------------------------ CONFIG ------------------------ */
+
+const slices = 15;
+const GAP = 1.6; // degrees between slices (adjustable)
+const cx = 300, cy = 300, r = 280;
+
+const colors = [
+  "#005234", "#04744d", "#1ea16c", //green
+  "#510d33", "#6d2148", "#8d306b", //purple
+  "#fba327", "#fdba21", "#fdca9e", //orange
+  "#1d1d1e", "#58585a", "#9b9da0", //black
+  "#e9e842", "#e5c143", "#ad8430", //yellow  
+];
+
+const badge = document.getElementById("badge");
+
+/* ------------------------ GEOMETRY HELPERS ------------------------ */
+
+// Convert polar → cartesian
+function polarToCartesian(cx, cy, r, angle){
+  const rad = angle * Math.PI / 180;
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+}
+
+// Slice shape with angular gap built in
+function createSlicePath(cx, cy, r, startAngle, endAngle){
+  const start = startAngle + GAP/2;
+  const end   = endAngle   - GAP/2;
+
+  const [x1,y1] = polarToCartesian(cx, cy, r, start);
+  const [x2,y2] = polarToCartesian(cx, cy, r, end);
+  const largeArc = end - start <= 180 ? 0 : 1;
+
+  return `M ${cx} ${cy}
+          L ${x1} ${y1}
+          A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}
+          Z`;
+}
+
+/* ------------------------ PATTERN GENERATION ------------------------ */
+
+function generateSlicePattern(sliceIndex, color){
+
+  /* --- Determine which category this slice belongs to --- */
+  // 5 categories × each category = 3 slices
+  const category = Math.floor(sliceIndex / 3);
+  
+  /* Count how many of the 3 checklist items in this category are checked */
+  let checks = 0;
+  for (let i = 0; i < 3; i++) {
+    const key = `${i}-${category}`;
+    if (localStorage.getItem(key) === "1") checks++;
+  }
+
+  /* --- Map checked items to visual parameters --- */
+  // You can tune these values to taste
+  const dynamicGap = [3.0, 2.0, 1.1, 0.4][checks];          // degrees
+  const ringCount  = [2, 3, 4, 5][checks];              // more rings = smaller cells
+  const angularSteps = [2, 3, 4,5][checks];             // more angular divisions
+  const density = [0.25, 0.38, 0.50, 0.68][checks];         // chance a cell gets filled
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg","g");
+  group.setAttribute("id", `slice-${sliceIndex}`);
+
+  const rawStart = -90 + sliceIndex*(360/slices);
+  const rawEnd   = rawStart + 360/slices;
+
+  /* --- CLIP PATH --- */
+  const clip = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
+  clip.setAttribute("id", `clip-${sliceIndex}`);
+
+  const clipPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+  clipPath.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
+  clip.appendChild(clipPath);
+  badge.appendChild(clip);
+
+  const container = document.createElementNS("http://www.w3.org/2000/svg","g");
+  container.setAttribute("clip-path", `url(#clip-${sliceIndex})`);
+
+
+  /* --- TRUE POLAR GRID WITH CATEGORY-BASED PARAMETERS --- */
+  const cellThickness = r / ringCount;
+
+  const angleSpan = (rawEnd - rawStart) - dynamicGap;  
+  const angleStart = rawStart + dynamicGap / 2;
+
+  for(let ri=0; ri<ringCount; ri++){
+    const innerR = (ri / ringCount) * r;
+    const outerR = ((ri+1) / ringCount) * r;
+
+    for(let ai=0; ai<angularSteps; ai++){
+      if(Math.random() < density){
+        const a1 = angleStart + (ai   /angularSteps)*angleSpan;
+        const a2 = angleStart + ((ai+1)/angularSteps)*angleSpan;
+
+        const [x1,y1] = polarToCartesian(cx, cy, innerR, a1);
+        const [x2,y2] = polarToCartesian(cx, cy, outerR, a1);
+        const [x3,y3] = polarToCartesian(cx, cy, outerR, a2);
+        const [x4,y4] = polarToCartesian(cx, cy, innerR, a2);
+
+        const largeArc = (a2-a1) <= 180 ? 0 : 1;
+
+        const cellPath = `
+          M ${x1} ${y1}
+          L ${x2} ${y2}
+          A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3} ${y3}
+          L ${x4} ${y4}
+          A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1} ${y1}
+          Z
+        `;
+
+        const cell = document.createElementNS("http://www.w3.org/2000/svg","path");
+        cell.setAttribute("d", cellPath.trim());
+        cell.setAttribute("fill", color);
+        cell.setAttribute("stroke", "none");
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  /* --- SLICE OUTLINE --- */
+  const outline = document.createElementNS("http://www.w3.org/2000/svg","path");
+  outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
+  outline.setAttribute("fill","none");
+  outline.setAttribute("stroke","black");
+  outline.setAttribute("stroke-width","1.3");
+
+  group.appendChild(container);
+  group.appendChild(outline);
+
+  return group;
+}
+
+
+/* ------------------------ PATTERN FOR UNCHECKED SLICES ------------------------ */
+
+function generateEmptySlicePattern(sliceIndex){
+
+  const color = "gray"; // base neutral color
+
+  // Extremely low density + huge cells to feel “empty”
+  const ringCount = 2;
+  const angularSteps = 2;
+  const density = 0.12;       // only 12% of cells filled → very holey look
+  const dynamicGap = 3.5;     // bigger gaps between slices
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg","g");
+  group.setAttribute("id", `slice-${sliceIndex}`);
+
+  const rawStart = -90 + sliceIndex*(360/slices);
+  const rawEnd   = rawStart + 360/slices;
+
+  /* --- CLIP PATH --- */
+  const clip = document.createElementNS("http://www.w3.org/2000/svg","clipPath");
+  clip.setAttribute("id", `clip-empty-${sliceIndex}`);
+
+  const clipPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+  clipPath.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
+  clip.appendChild(clipPath);
+  badge.appendChild(clip);
+
+  const container = document.createElementNS("http://www.w3.org/2000/svg","g");
+  container.setAttribute("clip-path", `url(#clip-empty-${sliceIndex})`);
+
+  /* --- POLAR GRID WITH VERY LARGE CELLS --- */
+  const angleSpan = (rawEnd - rawStart) - dynamicGap;  
+  const angleStart = rawStart + dynamicGap / 2;
+
+  for(let ri=0; ri<ringCount; ri++){
+    const innerR = (ri / ringCount) * r;
+    const outerR = ((ri+1) / ringCount) * r;
+
+    for(let ai=0; ai<angularSteps; ai++){
+      if(Math.random() < density){
+
+        const a1 = angleStart + (ai   /angularSteps)*angleSpan;
+        const a2 = angleStart + ((ai+1)/angularSteps)*angleSpan;
+
+        const [x1,y1] = polarToCartesian(cx, cy, innerR, a1);
+        const [x2,y2] = polarToCartesian(cx, cy, outerR, a1);
+        const [x3,y3] = polarToCartesian(cx, cy, outerR, a2);
+        const [x4,y4] = polarToCartesian(cx, cy, innerR, a2);
+
+        const largeArc = (a2-a1) <= 180 ? 0 : 1;
+
+        const cellPath = `
+          M ${x1} ${y1}
+          L ${x2} ${y2}
+          A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3} ${y3}
+          L ${x4} ${y4}
+          A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1} ${y1}
+          Z
+        `;
+
+        const cell = document.createElementNS("http://www.w3.org/2000/svg","path");
+        cell.setAttribute("d", cellPath.trim());
+        cell.setAttribute("fill", "#777"); // lighter gray for incomplete
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  /* OUTLINE */
+  const outline = document.createElementNS("http://www.w3.org/2000/svg","path");
+  outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
+  outline.setAttribute("fill","none");
+  outline.setAttribute("stroke","black");
+  outline.setAttribute("stroke-width","1.3");
+
+  group.appendChild(container);
+  group.appendChild(outline);
+
+  return group;
+}
+
+
+/* ------------------------ BADGE DRAWING ------------------------ */
+
+function drawBadge(){
+  badge.innerHTML = "";
+  for(let i=0;i<slices;i++){
+    const start = i*(360/slices)-90;
+    const end   = (i+1)*(360/slices)-90;
+
+    const pathData = createSlicePath(cx, cy, r, start, end);
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d", pathData);
+    path.setAttribute("fill","gray");
+    path.setAttribute("stroke","black");
+    path.setAttribute("stroke-width","1.3");
+    path.setAttribute("id", `slice-${i}`);
+
+    badge.appendChild(path);
+  }
+}
+
+/* ------------------------ CHECKLIST ------------------------ */
+
 const checklist = document.getElementById("checklist");
+
 function renderChecklist(){
   checklist.innerHTML = "";
-  DATA.forEach((col, c)=>{
+  DATA.forEach((col,c)=>{
     const div=document.createElement("div");
     div.className="category";
     div.innerHTML=`<div class="title">Categorie ${c+1}</div>`;
-    col.forEach((text, r)=>{
+    col.forEach((text,r)=>{
       const key=`${r}-${c}`;
       const checked=localStorage.getItem(key)==="1";
-      div.innerHTML+=`
-        <label class="item"><input type="checkbox" data-key="${key}" ${checked?"checked":""}/> ${text}</label>`;
+      div.innerHTML+=`<label class="item">
+        <input type="checkbox" data-key="${key}" ${checked?"checked":""}/>
+        ${text}
+      </label>`;
     });
     checklist.appendChild(div);
   });
+
   document.querySelectorAll("input[data-key]").forEach(cb=>{
     cb.addEventListener("change",()=>{
       localStorage.setItem(cb.dataset.key, cb.checked?"1":"0");
@@ -184,27 +364,56 @@ function renderChecklist(){
   });
 }
 
+/* ------------------------ UPDATE BADGE ------------------------ */
+
 function updateBadge(){
+
+  let everythingChecked = true; // assume true
+
   for(let r=0;r<3;r++){
     for(let c=0;c<5;c++){
-      const cell=document.getElementById(`cell-${r}-${c}`);
-      const on=localStorage.getItem(`${r}-${c}`)==="1";
-      cell.classList.toggle("revealed", on);
+      const index = r + c*3;
+      const key = `${r}-${c}`;
+      const on = localStorage.getItem(key)==="1";
+
+      if (!on) everythingChecked = false;
+
+      const old = document.getElementById(`slice-${index}`);
+      if(old) old.remove();
+
+      if (on) {
+        badge.appendChild(generateSlicePattern(index, colors[index]));
+      } else {
+        badge.appendChild(generateEmptySlicePattern(index));
+      }
     }
   }
+
+  /* ---- SPINNING LOGIC ---- */
+  if (everythingChecked) {
+    badge.classList.add("spinning");
+  } else {
+    badge.classList.remove("spinning");
+  }
 }
+
+
+/* ------------------------ RESET ------------------------ */
 
 document.getElementById("resetBtn").onclick = ()=>{
   if(confirm("Reset badge?")){
     localStorage.clear();
+    drawBadge();
     renderChecklist();
     updateBadge();
   }
 };
 
+/* ------------------------ INIT ------------------------ */
+
+drawBadge();
 renderChecklist();
 updateBadge();
 </script>
-
 </body>
 </html>
