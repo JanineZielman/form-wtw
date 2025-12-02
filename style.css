@@ -149,6 +149,10 @@ svg {
   }
 }
 
+#badge {
+  transition: rotate 2s ease;
+}
+
 #badge.spinning {
   animation: spinBadge 2s ease infinite;
   transform-origin: 300px 300px;
