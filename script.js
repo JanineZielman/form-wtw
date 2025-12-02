@@ -155,6 +155,7 @@ function generateSlicePattern(sliceIndex, color) {
       cell.id = `slice-${sliceIndex}-cell-${ri}-${ai}`;
       cell.classList.add("sliceSection");
       cell.setAttribute("d", cellPath.trim());
+      cell.setAttribute("stroke", color); // lighter gray for incomplete
       cell.setAttribute("fill", color); // lighter gray for incomplete
       cell.setAttribute("opacity", 0.0);
       container.appendChild(cell);
@@ -165,8 +166,8 @@ function generateSlicePattern(sliceIndex, color) {
   const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
   outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
   outline.setAttribute("fill", "none");
-  outline.setAttribute("stroke", "black");
-  outline.setAttribute("stroke-width", "1.3");
+  // outline.setAttribute("stroke", "black");
+  // outline.setAttribute("stroke-width", "1.3");
 
   group.appendChild(container);
   group.appendChild(outline);
@@ -231,7 +232,7 @@ function renderChecklist() {
         badge.style.rotate = `${((cb.dataset.groupIndex * -sectionAngle) - (sectionAngle / 2))}deg`;
       }
       updateSlicePattern(cb.dataset.groupIndex * 3);
-      updateSlicePattern(cb.dataset.groupIndex* 3 + 1);
+      updateSlicePattern(cb.dataset.groupIndex * 3 + 1);
       updateSlicePattern(cb.dataset.groupIndex * 3 + 2);
       // updateBadge();
     });
