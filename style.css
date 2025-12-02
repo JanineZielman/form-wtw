@@ -136,7 +136,7 @@ svg {
 }
 
 /* SPIN ANIMATION */
-@keyframes spinBadge {
+/* @keyframes spinBadge {
   0% {
     transform: rotate(0deg);
   }
@@ -148,14 +148,18 @@ svg {
   100% {
     transform: rotate(1080deg);
   }
-}
+} */
 
 #badge {
   transition: rotate 2s ease;
 }
 
+.sliceSection {
+  transition: opacity 0.5s ease;
+}
+
 #badge.spinning {
-  animation: spinBadge 2s ease infinite;
+  /* animation: spinBadge 2s ease infinite; */
   transform-origin: 300px 300px;
   /* center of the SVG */
 }

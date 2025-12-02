@@ -49,7 +49,7 @@ function createSlicePath(cx, cy, r, startAngle, endAngle) {
 
 /* ------------------------ PATTERN GENERATION ------------------------ */
 
-function generateSlicePattern(sliceIndex, color) {
+function updateSlicePattern(sliceIndex) {
 
   /* --- Determine which category this slice belongs to --- */
   // 5 categories × each category = 3 slices
@@ -61,6 +61,7 @@ function generateSlicePattern(sliceIndex, color) {
     const key = `${i}-${category}`;
     if (localStorage.getItem(key) === "1") checks++;
   }
+  console.log('checks for slice', sliceIndex, ':', checks);
 
   /* --- Map checked items to visual parameters --- */
   // You can tune these values to taste
@@ -69,84 +70,33 @@ function generateSlicePattern(sliceIndex, color) {
   const angularSteps = [2, 3, 4, 5][checks];             // more angular divisions
   const density = [0.25, 0.38, 0.50, 0.68][checks];         // chance a cell gets filled
 
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("id", `slice-${sliceIndex}`);
-
-  const rawStart = -90 + sliceIndex * (360 / slices);
-  const rawEnd = rawStart + 360 / slices;
-
-  /* --- CLIP PATH --- */
-  const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-  clip.setAttribute("id", `clip-${sliceIndex}`);
-
-  const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  clipPath.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
-  clip.appendChild(clipPath);
-  badge.appendChild(clip);
-
-  const container = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  container.setAttribute("clip-path", `url(#clip-${sliceIndex})`);
-
-
-  /* --- TRUE POLAR GRID WITH CATEGORY-BASED PARAMETERS --- */
-  const cellThickness = r / ringCount;
-
-  const angleSpan = (rawEnd - rawStart) - dynamicGap;
-  const angleStart = rawStart + dynamicGap / 2;
-
   for (let ri = 0; ri < ringCount; ri++) {
     const innerR = (ri / ringCount) * r;
     const outerR = ((ri + 1) / ringCount) * r;
 
     for (let ai = 0; ai < angularSteps; ai++) {
-      if (Math.random() < density) {
-        const a1 = angleStart + (ai / angularSteps) * angleSpan;
-        const a2 = angleStart + ((ai + 1) / angularSteps) * angleSpan;
+      let opacity = 1.0;
+      if (Math.random() >= density || checks === 0) {
+        opacity = 0.0;
+      }
 
-        const [x1, y1] = polarToCartesian(cx, cy, innerR, a1);
-        const [x2, y2] = polarToCartesian(cx, cy, outerR, a1);
-        const [x3, y3] = polarToCartesian(cx, cy, outerR, a2);
-        const [x4, y4] = polarToCartesian(cx, cy, innerR, a2);
-
-        const largeArc = (a2 - a1) <= 180 ? 0 : 1;
-
-        const cellPath = `
-          M ${x1} ${y1}
-          L ${x2} ${y2}
-          A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3} ${y3}
-          L ${x4} ${y4}
-          A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1} ${y1}
-          Z
-        `;
-
-        const cell = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        cell.setAttribute("d", cellPath.trim());
-        cell.setAttribute("fill", color);
-        cell.setAttribute("stroke", "none");
-        container.appendChild(cell);
+      const cellId = `slice-${sliceIndex}-cell-${ri}-${ai}`;
+      const cell = document.getElementById(cellId);
+      if (cell) {
+        cell.setAttribute("opacity", opacity);
+      } else {
+        console.log('no cell!');
       }
     }
   }
-
-  /* --- SLICE OUTLINE --- */
-  const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
-  outline.setAttribute("fill", "none");
-  outline.setAttribute("stroke", "black");
-  outline.setAttribute("stroke-width", "1.3");
-
-  group.appendChild(container);
-  group.appendChild(outline);
-
-  return group;
 }
 
 
 /* ------------------------ PATTERN FOR UNCHECKED SLICES ------------------------ */
 
-function generateEmptySlicePattern(sliceIndex) {
+function generateSlicePattern(sliceIndex, color) {
 
-  const color = "gray"; // base neutral color
+  // const color = "gray"; // base neutral color
 
   // Extremely low density + huge cells to feel “empty”
   const ringCount = 2;
@@ -181,19 +131,18 @@ function generateEmptySlicePattern(sliceIndex) {
     const outerR = ((ri + 1) / ringCount) * r;
 
     for (let ai = 0; ai < angularSteps; ai++) {
-      if (Math.random() < density) {
 
-        const a1 = angleStart + (ai / angularSteps) * angleSpan;
-        const a2 = angleStart + ((ai + 1) / angularSteps) * angleSpan;
+      const a1 = angleStart + (ai / angularSteps) * angleSpan;
+      const a2 = angleStart + ((ai + 1) / angularSteps) * angleSpan;
 
-        const [x1, y1] = polarToCartesian(cx, cy, innerR, a1);
-        const [x2, y2] = polarToCartesian(cx, cy, outerR, a1);
-        const [x3, y3] = polarToCartesian(cx, cy, outerR, a2);
-        const [x4, y4] = polarToCartesian(cx, cy, innerR, a2);
+      const [x1, y1] = polarToCartesian(cx, cy, innerR, a1);
+      const [x2, y2] = polarToCartesian(cx, cy, outerR, a1);
+      const [x3, y3] = polarToCartesian(cx, cy, outerR, a2);
+      const [x4, y4] = polarToCartesian(cx, cy, innerR, a2);
 
-        const largeArc = (a2 - a1) <= 180 ? 0 : 1;
+      const largeArc = (a2 - a1) <= 180 ? 0 : 1;
 
-        const cellPath = `
+      const cellPath = `
           M ${x1} ${y1}
           L ${x2} ${y2}
           A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3} ${y3}
@@ -202,11 +151,13 @@ function generateEmptySlicePattern(sliceIndex) {
           Z
         `;
 
-        const cell = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        cell.setAttribute("d", cellPath.trim());
-        cell.setAttribute("fill", "#777"); // lighter gray for incomplete
-        container.appendChild(cell);
-      }
+      const cell = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      cell.id = `slice-${sliceIndex}-cell-${ri}-${ai}`;
+      cell.classList.add("sliceSection");
+      cell.setAttribute("d", cellPath.trim());
+      cell.setAttribute("fill", color); // lighter gray for incomplete
+      cell.setAttribute("opacity", 0.0);
+      container.appendChild(cell);
     }
   }
 
@@ -261,7 +212,7 @@ function renderChecklist() {
       const key = `${r}-${c}`;
       const checked = localStorage.getItem(key) === "1";
       div.innerHTML += `<label class="item">
-        <input type="checkbox" data-rotation="${c}" data-key="${key}" ${checked ? "checked" : ""}/>
+        <input type="checkbox" data-group-index="${c}" data-key="${key}" ${checked ? "checked" : ""}/>
         ${text}
       </label>`;
     });
@@ -272,16 +223,47 @@ function renderChecklist() {
     cb.addEventListener("change", () => {
       localStorage.setItem(cb.dataset.key, cb.checked ? "1" : "0");
       const currentRotation = parseFloat(badge.style.rotate) || 0;
-      const targetRotation = cb.dataset.rotation * (360 / slices);
+      const targetRotation = cb.dataset.groupIndex * (360 / slices);
       const delta = ((targetRotation - currentRotation + 540) % 360) - 180;
-      if (delta > 0) {
-        badge.style.rotate = `${((cb.dataset.rotation * -sectionAngle) - (sectionAngle / 2))}deg`;
+      if (delta > 0) { // TODO: fix rotation direction properly; should take the fastest direction
+        badge.style.rotate = `${((cb.dataset.groupIndex * -sectionAngle) - (sectionAngle / 2))}deg`;
       } else {
-        badge.style.rotate = `${((cb.dataset.rotation * -sectionAngle) - (sectionAngle / 2))}deg`;
+        badge.style.rotate = `${((cb.dataset.groupIndex * -sectionAngle) - (sectionAngle / 2))}deg`;
       }
-      updateBadge();
+      updateSlicePattern(cb.dataset.groupIndex * 3);
+      updateSlicePattern(cb.dataset.groupIndex* 3 + 1);
+      updateSlicePattern(cb.dataset.groupIndex * 3 + 2);
+      // updateBadge();
     });
   });
+}
+
+/* ------------------------ CREATE BADGE ------------------------ */
+
+function createBadge() {
+  let everythingChecked = true; // assume true
+
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 5; c++) {
+      const index = r + c * 3;
+      const key = `${r}-${c}`;
+      const on = localStorage.getItem(key) === "1";
+
+
+      // if (on) {
+      //   badge.appendChild(generateSlicePattern(index, colors[index]));
+      // } else {
+      badge.appendChild(generateSlicePattern(index, colors[index]));
+      // }
+    }
+  }
+
+  /* ---- SPINNING LOGIC ---- */
+  // if (everythingChecked) {
+  //   badge.classList.add("spinning");
+  // } else {
+  //   badge.classList.remove("spinning");
+  // }
 }
 
 /* ------------------------ UPDATE BADGE ------------------------ */
@@ -295,26 +277,24 @@ function updateBadge() {
       const index = r + c * 3;
       const key = `${r}-${c}`;
       const on = localStorage.getItem(key) === "1";
-
-      if (!on) everythingChecked = false;
-
-      const old = document.getElementById(`slice-${index}`);
-      if (old) old.remove();
-
+      const slice = document.getElementById(`slice-${index}`);
+      updateSlicePattern(index);
+      /*
       if (on) {
         badge.appendChild(generateSlicePattern(index, colors[index]));
       } else {
         badge.appendChild(generateEmptySlicePattern(index));
       }
+      */
     }
   }
 
   /* ---- SPINNING LOGIC ---- */
-  if (everythingChecked) {
-    badge.classList.add("spinning");
-  } else {
-    badge.classList.remove("spinning");
-  }
+  // if (everythingChecked) {
+  //   badge.classList.add("spinning");
+  // } else {
+  //   badge.classList.remove("spinning");
+  // }
 }
 
 
@@ -331,6 +311,7 @@ document.getElementById("resetBtn").onclick = () => {
 
 /* ------------------------ INIT ------------------------ */
 
-drawBadge();
+// drawBadge();
 renderChecklist();
+createBadge();
 updateBadge();
