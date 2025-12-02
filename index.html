@@ -47,7 +47,6 @@
       "#510d33", "#6d2148", "#8d306b", //purple
       "#fba327", "#fdba21", "#fdca9e", //orange
       "#1d1d1e", "#58585a", "#9b9da0", //black
-      "#e9e842", "#e5c143", "#ad8430", //yellow  
     ];
 
     const badge = document.getElementById("badge");
@@ -278,7 +277,7 @@
     const checklist = document.getElementById("checklist");
 
     const categoriesList = ["Content + UX", "Code + Techniek", "Beeld + Media", "Hosting + Int", "Typografie + Kleur"]
-
+    const sectionAngle = 360 / categoriesList.length
     function renderChecklist() {
       checklist.innerHTML = "";
       DATA.forEach((col, c) => {
@@ -289,7 +288,7 @@
           const key = `${r}-${c}`;
           const checked = localStorage.getItem(key) === "1";
           div.innerHTML += `<label class="item">
-        <input type="checkbox" data-key="${key}" ${checked ? "checked" : ""}/>
+        <input type="checkbox" data-rotation="${c}" data-key="${key}" ${checked ? "checked" : ""}/>
         ${text}
       </label>`;
         });
@@ -299,6 +298,14 @@
       document.querySelectorAll("input[data-key]").forEach(cb => {
         cb.addEventListener("change", () => {
           localStorage.setItem(cb.dataset.key, cb.checked ? "1" : "0");
+          const currentRotation = parseFloat(badge.style.rotate) || 0;
+          const targetRotation = cb.dataset.rotation * (360 / slices);
+          const delta = ((targetRotation - currentRotation + 540) % 360) - 180;
+          if (delta > 0) {
+            badge.style.rotate = `${((cb.dataset.rotation * -sectionAngle) - (sectionAngle / 2))}deg`;
+          } else {
+            badge.style.rotate = `${((cb.dataset.rotation * -sectionAngle) - (sectionAngle / 2))}deg`;
+          }
           updateBadge();
         });
       });
