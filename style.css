@@ -131,7 +131,7 @@ svg {
   width: auto;
   height: calc(100vh - 550px);
   display: block;
-  border: 0px solid black;
+  transform-origin: center center !important;
 }
 
 /* SPIN ANIMATION */
