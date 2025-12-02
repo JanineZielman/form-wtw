@@ -11,7 +11,7 @@ const DATA = [
 /* ------------------------ CONFIG ------------------------ */
 
 const slices = 15;
-const GAP = 1.6; // degrees between slices (adjustable)
+const GAP = 6; // degrees between slices (adjustable)
 const cx = 300, cy = 300, r = 280;
 
 const colors = [
