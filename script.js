@@ -1,31 +1,71 @@
 /* ------------------------ CHECKLIST DATA ------------------------ */
 
-const DATA = [
-  ["Minimaliseer niet-essentiële content", "Heldere navigatie & formulieren", "Minder tijd nodig = duurzamer"],
-  ["Gebruik alleen efficiënte scripts", "Verminder JavaScript / rommel", "Gebruik open source waar mogelijk"],
-  ["Optimaliseer afbeeldingen", "Gebruik lazy loading", "Verminder video-gebruik"],
-  ["Groene hosting", "Overweeg statische sites / CDN", "Plan een cleaning dag"],
-  ["Gebruik systeemfonts", "Vermijd zware contrasten", "Gebruik energiezuinige kleuren"]
+const sectionsData = [
+  {
+    name: "Content + UX",
+    items: [
+      { title: "Minimaliseer niet-essentiële content", color: "#e9e842", state: "off" },
+      { title: "Heldere navigatie & formulieren", color: "#e9e842", state: "off" },
+      { title: "Minder tijd nodig = duurzamer", color: "#e9e842", state: "off" }
+    ]
+  },
+  {
+    name: "Code + Techniek",
+    items: [
+      { title: "Gebruik alleen efficiënte scripts", color: "#1ea16c", state: "off" },
+      { title: "Verminder JavaScript / rommel", color: "#1ea16c", state: "off" },
+      { title: "Gebruik open source waar mogelijk", color: "#1ea16c", state: "off" }
+    ]
+  },
+  {
+    name: "Beeld + Media",
+    items: [
+      { title: "Optimaliseer afbeeldingen", color: "#8d306b", state: "off" },
+      { title: "Gebruik lazy loading", color: "#8d306b", state: "off" },
+      { title: "Verminder video-gebruik", color: "#8d306b", state: "off" }
+    ]
+  },
+  {
+    name: "Hosting + Infra",
+    items: [
+      { title: "Groene hosting", color: "#fba327", state: "off" },
+      { title: "Overweeg statische sites / CDN", color: "#fba327", state: "off" },
+      { title: "Plan een cleaning dag", color: "#fba327", state: "off" }
+    ]
+  },
+  {
+    name: "Typografie + Kleur",
+    items: [
+      { title: "Gebruik systeemfonts", color: "#9b9da0", state: "off" },
+      { title: "Vermijd zware contrasten", color: "#9b9da0", state: "off" },
+      { title: "Gebruik energiezuinige kleuren", color: "#9b9da0", state: "off" }
+    ]
+  }
 ];
 
 /* ------------------------ CONFIG ------------------------ */
 
-const slices = 15;
-const GAP = 6; // degrees between slices (adjustable)
-const cx = 300, cy = 300, r = 280;
+const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
+const sliceAngle = 360 / totalSlices;
 
-const colors = [
-  "#e9e842", "#e5c143", "#ad8430", //yellow
-  "#005234", "#04744d", "#1ea16c", //green
-  "#510d33", "#6d2148", "#8d306b", //purple
-  "#fba327", "#fdba21", "#fdca9e", //orange
-  "#1d1d1e", "#58585a", "#9b9da0", //black
-];
-
+let allSelected = checkAllSelected();
+const gapBetweenSlices = 6; // degrees between slices
+const cx = 300, cy = 300, r = 280; // badge center and radius
 const badge = document.getElementById("badge");
+
+// Slice pattern settings
+const ringCount = 6;      // number of concentric rings
+const angularSteps = 3;   // number of angular divisions per slice
+const density = 0.12;     // only 12% of cells filled → very holey look
+const dynamicGap = 3.5;   // bigger gaps between slices
+const ringGap = 4;        // gap inbetween rings on the same slice
+
 
 /* ------------------------ GEOMETRY HELPERS ------------------------ */
 
+function checkAllSelected() {
+  return sectionsData.filter((section) => section.items.every((item) => item.state === "on")).length === sectionsData.length;
+}
 // Convert polar → cartesian
 function polarToCartesian(cx, cy, r, angle) {
   const rad = angle * Math.PI / 180;
@@ -34,8 +74,8 @@ function polarToCartesian(cx, cy, r, angle) {
 
 // Slice shape with angular gap built in
 function createSlicePath(cx, cy, r, startAngle, endAngle) {
-  const start = startAngle + GAP / 2;
-  const end = endAngle - GAP / 2;
+  const start = startAngle + gapBetweenSlices / 2;
+  const end = endAngle - gapBetweenSlices / 2;
 
   const [x1, y1] = polarToCartesian(cx, cy, r, start);
   const [x2, y2] = polarToCartesian(cx, cy, r, end);
@@ -48,7 +88,6 @@ function createSlicePath(cx, cy, r, startAngle, endAngle) {
 }
 
 /* ------------------------ PATTERN GENERATION ------------------------ */
-
 function updateSlicePattern(sliceIndex) {
 
   /* --- Determine which category this slice belongs to --- */
@@ -75,10 +114,12 @@ function updateSlicePattern(sliceIndex) {
     const outerR = ((ri + 1) / ringCount) * r;
 
     for (let ai = 0; ai < angularSteps; ai++) {
-      let opacity = 1.0;
-      if (Math.random() >= density || checks === 0) {
-        opacity = 0.0;
-      }
+      // let opacity = 1.0;
+      // if (checks === 0) {
+      //   opacity = 0.0;
+      // } else {
+      //   //   opacity = Math.min(1.0, 0.2 + Math.random());
+      // }
 
       const cellId = `slice-${sliceIndex}-cell-${ri}-${ai}`;
       const cell = document.getElementById(cellId);
@@ -93,22 +134,13 @@ function updateSlicePattern(sliceIndex) {
 
 
 /* ------------------------ PATTERN FOR UNCHECKED SLICES ------------------------ */
-
 function generateSlicePattern(sliceIndex, color) {
-
-  // const color = "gray"; // base neutral color
-
-  // Extremely low density + huge cells to feel “empty”
-  const ringCount = 2;
-  const angularSteps = 2;
-  const density = 0.12;       // only 12% of cells filled → very holey look
-  const dynamicGap = 3.5;     // bigger gaps between slices
 
   const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
   group.setAttribute("id", `slice-${sliceIndex}`);
 
-  const rawStart = -90 + sliceIndex * (360 / slices);
-  const rawEnd = rawStart + 360 / slices;
+  const rawStart = -90 + sliceIndex * sliceAngle;
+  const rawEnd = rawStart + sliceAngle;
 
   /* --- CLIP PATH --- */
   const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
@@ -128,7 +160,9 @@ function generateSlicePattern(sliceIndex, color) {
 
   for (let ri = 0; ri < ringCount; ri++) {
     const innerR = (ri / ringCount) * r;
-    const outerR = ((ri + 1) / ringCount) * r;
+    const outerR = ((ri + 1) / ringCount) * r - ringGap;
+
+    let angularSteps = ri;
 
     for (let ai = 0; ai < angularSteps; ai++) {
 
@@ -157,20 +191,21 @@ function generateSlicePattern(sliceIndex, color) {
       cell.setAttribute("d", cellPath.trim());
       cell.setAttribute("stroke", color); // lighter gray for incomplete
       cell.setAttribute("fill", color); // lighter gray for incomplete
-      cell.setAttribute("opacity", 0.0);
+      // cell.setAttribute("opacity", 0.0);
+      cell.setAttribute("opacity", Math.random());
       container.appendChild(cell);
     }
   }
 
   /* OUTLINE */
-  const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
-  outline.setAttribute("fill", "none");
+  // const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  // outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
+  // outline.setAttribute("fill", "none");
   // outline.setAttribute("stroke", "black");
   // outline.setAttribute("stroke-width", "1.3");
 
   group.appendChild(container);
-  group.appendChild(outline);
+  // group.appendChild(outline);
 
   return group;
 }
@@ -180,9 +215,9 @@ function generateSlicePattern(sliceIndex, color) {
 
 function drawBadge() {
   badge.innerHTML = "";
-  for (let i = 0; i < slices; i++) {
-    const start = i * (360 / slices) - 90;
-    const end = (i + 1) * (360 / slices) - 90;
+  for (let i = 0; i < totalSlices; i++) {
+    const start = i * (360 / totalSlices) - 90;
+    const end = (i + 1) * (360 / totalSlices) - 90;
 
     const pathData = createSlicePath(cx, cy, r, start, end);
 
@@ -200,21 +235,20 @@ function drawBadge() {
 /* ------------------------ CHECKLIST ------------------------ */
 
 const checklist = document.getElementById("checklist");
-
-const categoriesList = ["Content + UX", "Code + Techniek", "Beeld + Media", "Hosting + Int", "Typografie + Kleur"]
-const sectionAngle = 360 / categoriesList.length
 function renderChecklist() {
   checklist.innerHTML = "";
-  DATA.forEach((col, c) => {
+  sectionsData.forEach((section, sectionIndex) => {
     const div = document.createElement("div");
     div.className = "category";
-    div.innerHTML = `<div class="title">${categoriesList[c]}</div>`;
-    col.forEach((text, r) => {
-      const key = `${r}-${c}`;
+    div.innerHTML = `<div class="title">${section.name}</div>`;
+    section.items.forEach((item, r) => {
+      const key = `${r}-${sectionIndex}`;
       const checked = localStorage.getItem(key) === "1";
       div.innerHTML += `<label class="item">
-        <input type="checkbox" data-group-index="${c}" data-key="${key}" ${checked ? "checked" : ""}/>
-        ${text}
+          <span class="checkbox-container">
+            <input type="checkbox" data-group-index="${sectionIndex}" data-key="${key}" ${checked ? "checked" : ""}/>
+          </span>
+        ${item.title}
       </label>`;
     });
     checklist.appendChild(div);
@@ -224,91 +258,80 @@ function renderChecklist() {
     cb.addEventListener("change", () => {
       localStorage.setItem(cb.dataset.key, cb.checked ? "1" : "0");
       const currentRotation = parseFloat(badge.style.rotate) || 0;
-      const targetRotation = cb.dataset.groupIndex * (360 / slices);
+      const targetRotation = cb.dataset.groupIndex * (360 / totalSlices);
       const delta = ((targetRotation - currentRotation + 540) % 360) - 180;
       if (delta > 0) { // TODO: fix rotation direction properly; should take the fastest direction
-        badge.style.rotate = `${((cb.dataset.groupIndex * -sectionAngle) - (sectionAngle / 2))}deg`;
+        badge.style.rotate = `${((cb.dataset.groupIndex * -sliceAngle) - (sliceAngle / 2))}deg`;
       } else {
-        badge.style.rotate = `${((cb.dataset.groupIndex * -sectionAngle) - (sectionAngle / 2))}deg`;
+        badge.style.rotate = `${((cb.dataset.groupIndex * -sliceAngle) - (sliceAngle / 2))}deg`;
       }
-      updateSlicePattern(cb.dataset.groupIndex * 3);
-      updateSlicePattern(cb.dataset.groupIndex * 3 + 1);
-      updateSlicePattern(cb.dataset.groupIndex * 3 + 2);
-      // updateBadge();
+      // updateSlicePattern(cb.dataset.groupIndex * 3);
+      // updateSlicePattern(cb.dataset.groupIndex * 3 + 1);
+      // updateSlicePattern(cb.dataset.groupIndex * 3 + 2);
+      updateBadge();
     });
   });
 }
 
 /* ------------------------ CREATE BADGE ------------------------ */
-
 function createBadge() {
-  let everythingChecked = true; // assume true
+  sectionsData.forEach((section, sectionIndex) => {
+    section.items.forEach((item, itemIndex) => {
+      const key = `${itemIndex}-${sectionIndex}`;
+      // Todo: length of 3 is hardcoded. Might be fine if we don't update the checklist anymore,
+      // otherwise we should make this dynamic.
+      badge.appendChild(generateSlicePattern((sectionIndex * 3) + itemIndex, item.color));
+    });
+  });
 
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 5; c++) {
-      const index = r + c * 3;
-      const key = `${r}-${c}`;
-      const on = localStorage.getItem(key) === "1";
-
-
-      // if (on) {
-      //   badge.appendChild(generateSlicePattern(index, colors[index]));
-      // } else {
-      badge.appendChild(generateSlicePattern(index, colors[index]));
-      // }
-    }
-  }
-
-  /* ---- SPINNING LOGIC ---- */
-  // if (everythingChecked) {
-  //   badge.classList.add("spinning");
-  // } else {
-  //   badge.classList.remove("spinning");
-  // }
+  // const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  // centerCircle.setAttribute("cx", cx);
+  // centerCircle.setAttribute("cy", cy);
+  // centerCircle.setAttribute("r", 20); // Adjust radius as needed
+  // centerCircle.setAttribute("fill", "#313030"); // White fill
+  // badge.appendChild(centerCircle);
 }
 
 /* ------------------------ UPDATE BADGE ------------------------ */
 
 function updateBadge() {
-
   let everythingChecked = true; // assume true
-
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 5; c++) {
       const index = r + c * 3;
       const key = `${r}-${c}`;
       const on = localStorage.getItem(key) === "1";
+      console.log('on: ', on)
+      console.log('is on? ', on);
+      if (!on) {
+        everythingChecked = false;
+      }
       const slice = document.getElementById(`slice-${index}`);
       updateSlicePattern(index);
-      /*
-      if (on) {
-        badge.appendChild(generateSlicePattern(index, colors[index]));
-      } else {
-        badge.appendChild(generateEmptySlicePattern(index));
-      }
-      */
     }
   }
 
   /* ---- SPINNING LOGIC ---- */
-  // if (everythingChecked) {
-  //   badge.classList.add("spinning");
-  // } else {
-  //   badge.classList.remove("spinning");
-  // }
+  if (everythingChecked) {
+    console.log('everything checked! spinning badge.');
+    badge.classList.add("spinning");
+  } else {
+    console.log('not everything checked. stop spinning.');
+    badge.classList.remove("spinning");
+  }
 }
 
 
 /* ------------------------ RESET ------------------------ */
 
-document.getElementById("resetBtn").onclick = () => {
-  if (confirm("Reset badge?")) {
-    localStorage.clear();
-    drawBadge();
-    renderChecklist();
-    updateBadge();
-  }
-};
+// document.getElementById("resetBtn").onclick = () => {
+//   if (confirm("Reset badge?")) {
+//     localStorage.clear();
+//     drawBadge();
+//     renderChecklist();
+//     updateBadge();
+//   }
+// };
 
 /* ------------------------ INIT ------------------------ */
 

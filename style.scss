@@ -19,59 +19,70 @@ body {
   flex-direction: row;
   width: 100%;
   max-height: 100%;
-}
-.page-wrap .left-bar {
-  top: 0;
-  left: 0;
-  width: 400px;
-  min-height: 100vh;
-  overflow: scroll;
-  background-color: #222;
-  padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
-  border-right: 2px solid #9b9da0;
-}
-.page-wrap .left-bar h1 {
-  font-size: 48px;
-  margin: 0 0 14px;
-  font-weight: 300;
-}
-.page-wrap .left-bar h4 {
-  text-align: left;
-  font-size: 1.3rem;
-  font-weight: 300;
-  margin: 0;
-  padding: 0;
-}
-.page-wrap .left-bar p strong {
-  font-weight: 800;
-}
-.page-wrap .content-container {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  max-width: 1200px;
-  position: relative;
-}
-.page-wrap .content-container .panel {
-  background-color: transparent;
-  padding: 20px;
-  border-bottom: 1px solid black;
-}
-.page-wrap .content-container .panel-checklist #checklist {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  width: 100%;
-}
-.page-wrap .content-container .panel-checklist #checklist .category {
-  width: 19%;
-  box-sizing: border-box;
-}
-.page-wrap .content-container .panel-checklist #checklist .checkbox-container {
-  width: 24px;
-  height: 24px;
-  background-color: red;
+
+  .left-bar {
+    top: 0;
+    left: 0;
+    width: 400px;
+    min-height: 100vh;
+    overflow: scroll;
+    background-color: #222;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+    border-right: 2px solid #9b9da0;
+
+    h1 {
+      font-size: 48px;
+      margin: 0 0 14px;
+      font-weight: 300;
+    }
+
+    h4 {
+      text-align: left;;
+      font-size: 1.3rem;
+      font-weight: 300;
+      margin: 0;
+      padding: 0;
+    }
+
+    p {
+      strong {
+        font-weight: 800;
+      }
+    }
+  }
+
+  .content-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+
+    .panel {
+      background-color: transparent;
+      padding: 20px;
+      border-bottom: 1px solid black;
+    }
+
+    .panel-checklist #checklist {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      width: 100%;
+
+      .category {
+        width: 19%;
+        box-sizing: border-box;
+      }
+
+      .checkbox-container {
+        width: 24px;
+        height: 24px;
+        background-color: red;
+      }
+    }
+  }
 }
 
 .category {
@@ -79,27 +90,33 @@ body {
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
-}
-.category .title {
-  color: black;
-  padding: 4px 10px;
-  font-weight: 600;
-  margin-bottom: 14px;
-}
-.category:nth-child(1) .title {
-  background-color: #e9e842;
-}
-.category:nth-child(2) .title {
-  background-color: #1ea16c;
-}
-.category:nth-child(3) .title {
-  background-color: #8d306b;
-}
-.category:nth-child(4) .title {
-  background-color: #fba327;
-}
-.category:nth-child(5) .title {
-  background-color: #9b9da0;
+
+  .title {
+    color: black;
+    padding: 4px 10px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  &:nth-child(1) .title {
+    background-color: #e9e842;
+  }
+
+  &:nth-child(2) .title {
+    background-color: #1ea16c;
+  }
+
+  &:nth-child(3) .title {
+    background-color: #8d306b;
+  }
+
+  &:nth-child(4) .title {
+    background-color: #fba327;
+  }
+
+  &:nth-child(5) .title {
+    background-color: #9b9da0;
+  }
 }
 
 label.item {
@@ -108,9 +125,7 @@ label.item {
   margin: 6px 0;
   cursor: pointer;
   font-size: 14px;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  user-select: none;
 }
 
 .item {
@@ -151,13 +166,16 @@ svg {
   0% {
     transform: rotate(0deg);
   }
+
   50% {
     transform: rotate(180deg);
   }
+
   100% {
     transform: rotate(1080deg);
   }
 }
+
 #badge {
   transition: rotate 2s ease;
 }
@@ -169,6 +187,7 @@ svg {
 #badge.spinning {
   animation: spinBadge 20s linear infinite;
   transform-origin: 300px 300px;
+  // border: 10px solid red;
   /* center of the SVG */
 }
 
@@ -176,22 +195,27 @@ svg {
   h1 {
     font-size: 36px;
   }
+
   h2 {
     font-size: 20px;
   }
+
   #checklist {
     flex-direction: column;
   }
+
   .panel.panel-checklist {
     padding: 0;
     padding-bottom: 24px;
   }
+
   #checklist .category {
     width: 100%;
     /* padding: 0; */
   }
+
   svg {
     height: auto;
     width: 100vw;
   }
-}/*# sourceMappingURL=style.css.map */
+}
