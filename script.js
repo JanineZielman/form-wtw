@@ -70,37 +70,19 @@ let colorOffsetDir = 1;
 
 
 /* ------------------------ COLOR HELPERS ------------------------ */
-const calculateTintAndShade = (
-  hexColor, // using #663399 as an example
-  percentage = 0.1 // using 10% as an example
-) => {
-  const r = parseInt(hexColor.slice(1, 3), 16); // r = 102
-  const g = parseInt(hexColor.slice(3, 5), 16); // g = 51
-  const b = parseInt(hexColor.slice(5, 7), 16); // b = 153
+const calculateTintAndShade = (hexColor, percentage = 0.1) => {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
 
-  /*
-     From this part, we are using our two formulas
-     in this case, here is the formula for tint,
-     please be aware that we are performing two validations
-     we are using Math.min to set the max level of tint to 255,
-     so we don't get values like 280 ;)
-     also, we have the Math.round so we don't have values like 243.2
-     both validations apply for both tint and shade as you can see */
-  const tintR = Math.round(Math.min(255, r + (255 - r) * percentage)); // 117
-  const tintG = Math.round(Math.min(255, g + (255 - g) * percentage)); // 71
-  const tintB = Math.round(Math.min(255, b + (255 - b) * percentage)); // 163
+  const tintR = Math.round(Math.min(255, r + (255 - r) * percentage));
+  const tintG = Math.round(Math.min(255, g + (255 - g) * percentage));
+  const tintB = Math.round(Math.min(255, b + (255 - b) * percentage));
 
+  const shadeR = Math.round(Math.max(0, r - r * percentage));
+  const shadeG = Math.round(Math.max(0, g - g * percentage));
+  const shadeB = Math.round(Math.max(0, b - b * percentage));
 
-  const shadeR = Math.round(Math.max(0, r - r * percentage)); // 92
-  const shadeG = Math.round(Math.max(0, g - g * percentage)); // 46
-  const shadeB = Math.round(Math.max(0, b - b * percentage)); // 138
-
-
-  /*
-     Now with all the values calculated, the only missing stuff is
-     getting our color back to hexadecimal, to achieve that, we are going
-     to perform a toString(16) on each value, so we get the hex value
-     for each color, and then we just append each value together and voilà!*/
   return {
     tint: {
       r: tintR,
@@ -144,7 +126,7 @@ function drawSlice(cx, cy, r, color, rotationDegrees, groupIndex, sliceIndex) {
     return; // skip drawing if not checked
   }
 
-  const ringThickness = (r-centerHoleRadius) / numRings;
+  const ringThickness = (r - centerHoleRadius) / numRings;
   for (let n = 0; n < numRings; n++) { // don't draw the innermost ring so we get a round hole
     const numSubSlices = maxNumSubSlices - n; // fewer subslices in inner rings
     const sliceAngleWithoutGaps = sliceAngle - gapBetweenSlices;
@@ -156,33 +138,16 @@ function drawSlice(cx, cy, r, color, rotationDegrees, groupIndex, sliceIndex) {
       }
       const start = -90 - sliceAngleWithoutGaps / 2 + i * subSliceAngle;
       const end = start + subSliceAngle;
-      // const start = -90 + gapBetweenSlices * 2 - i * subSliceAngle;
-      // const end = start + subSliceAngle;
 
       const [x1, y1] = polarToCartesian(0, 0, r, start);
       const [x2, y2] = polarToCartesian(0, 0, r, end);
 
       ctx.beginPath();
-      // const offset = 2;
-      // const offsetScale = 1;
-      // if (i == 0) { // first
-      //   ctx.arc(0, 0, r - n * ringThickness, ((start + offset * (n * offsetScale)) * Math.PI) / 180, (end * Math.PI) / 180);
-      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, ((start + offset * ((n + 1) * offsetScale)) * Math.PI) / 180, true);
-      // } else if (i == maxNumSubSlices - 1) { // last
-      //   ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, ((end - offset * (n * offsetScale)) * Math.PI) / 180);
-      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, ((end - offset * ((n + 1) * offsetScale)) * Math.PI) / 180, (start * Math.PI) / 180, true);
-      // } else { // center
-      //   ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, (end * Math.PI) / 180);
-      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, (start * Math.PI) / 180, true);
-      // }
       ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, (end * Math.PI) / 180);
       ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, (start * Math.PI) / 180, true);
 
       ctx.closePath();
-      // const tintedColor = calculateTintAndShade(color, Math.random() * 0.4).tint.hex;
-      // console.log('id: ', groupIndex * maxNumSubSlices * numRings + sliceIndex *  , ': ', colorOffsets[groupIndex * maxNumSubSlices * numRings + sliceIndex]);
       const tintedColor = calculateTintAndShade(color, colorOffsets[colorIdx] + colorOffset).shade.hex;
-      // const tintedColor = calculateTintAndShade(color, Math.random()).tint.hex;
       ctx.fillStyle = tintedColor;
       ctx.fill();
       ctx.strokeStyle = tintedColor;
@@ -249,15 +214,9 @@ function renderChecklist() {
     cb.addEventListener("change", () => {
       localStorage.setItem(cb.dataset.key, cb.checked ? "1" : "0");
       checkedList[cb.dataset.groupIndex][cb.dataset.sliceIndex] = cb.checked;
-
-      // console.log('selected', cb.dataset.groupIndex);
-      // console.log('group index', cb.dataset.groupIndex);
-      // console.log('slice index', cb.dataset.sliceIndex);
       const rotationIndex = parseInt(cb.dataset.groupIndex) * 3 + parseInt(cb.dataset.sliceIndex);
-      // console.log("rotation index: ", rotationIndex);
       rotationTarget = rotationIndex * -sliceAngle;
       console.log('rotationTarget: ', rotationTarget)
-      // console.log("new rotation target: ", rotationTarget);
       updateBadge();
     });
   });
@@ -301,11 +260,9 @@ function rotateBadge() {
     if (Math.abs(diff) < 0.1) {
       rotationAngle = rotationTarget; // Snap to target if close enough
     } else {
-      // rotationAngle += diff * 0.01; // Ease towards the target
       // Determine the shortest rotation direction
       const normalizedDiff = ((rotationTarget - rotationAngle) + 360) % 360;
       const shortestRotation = normalizedDiff > 180 ? normalizedDiff - 360 : normalizedDiff;
-
       rotationAngle += shortestRotation * 0.05; // Ease towards the target
     }
   }
@@ -317,47 +274,22 @@ function rotateBadge() {
 
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // ctx.fillStyle = "#1d1c1c";
-  // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((rotationAngle * Math.PI) / 180);
-  // ctx.rotate((rotationAngle * Math.PI) / 180);
-  // ctx.translate(-cx, -cy);
-
-  // ctx.beginPath();
-  // ctx.arc(0, 0, 40, 0, 2 * Math.PI);
-  // ctx.closePath();
-  // ctx.strokeStyle = "red";
-  // ctx.stroke();
 
   let sliceIndex = 0;
   const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
   const sliceAngleDegrees = 360 / totalSlices;
-  // const sliceAngleDegreesRad = sliceAngle * (Math.PI / 180);
-  // const sliceAngleRad = 0;
-  // ctx.rotate(-rotationDegrees * Math.PI / 180); // reset rotation for each ring
 
   sectionsData.forEach((section, i) => {
-    // console.log('section: ', section, i)
     section.items.forEach((item, n) => {
-      // console.log('item: ', item, n)
-      // console.log('call drawSlice with: ', i, n)
       drawSlice(cx, cy, r, item.color, sliceAngleDegrees, i, n);
       sliceIndex++;
     });
-    // Clear a circle in the middle of the canvas
   });
   ctx.restore();
-  // rotationAngle = (rotationAngle + 1) % 360;
-
-  // ctx.globalCompositeOperation = "destination-out";
-  // ctx.beginPath();
-  // ctx.arc(cx, cy, centerHoleRadius, 0, 2 * Math.PI);
-  // ctx.fillStyle = "white";
-  // ctx.fill();
-  // ctx.globalCompositeOperation = "source-over";
 
   requestAnimationFrame(rotateBadge);
 }
