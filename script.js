@@ -1,5 +1,6 @@
 /* ------------------------ CHECKLIST DATA ------------------------ */
 
+
 const sectionsData = [
   {
     name: "Content + UX",
@@ -51,20 +52,21 @@ ctx.clearRect(0, 0, canvas.width, canvas.height);
 ctx.fillStyle = "#ffffff";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-const gapBetweenSlices = 2; // degrees between slices
+const gapBetweenSlices = 4; // degrees between slices
 const cx = canvas.width / 2;
 const cy = canvas.height / 2;
 const r = canvas.height / 2 - 10; // radius of badge
-const numRings = 8; // number of rings per slice
-const numSubSlices = 3; // number of subslices per ring
-const centerHoleRadius = 10;
+const numRings = 5; // number of rings per slice
+const maxNumSubSlices = 5; // max number of subslices per ring
+const centerHoleRadius = 20;
 
 
 const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
 const sliceAngle = 360 / totalSlices;
 let rotationAngle = 0;
 let rotationTarget = 0;
-
+let colorOffset = 0;
+let colorOffsetDir = 1;
 
 
 /* ------------------------ COLOR HELPERS ------------------------ */
@@ -123,6 +125,11 @@ const calculateTintAndShade = (
   };
 };
 
+let colorIdx = 0;
+let colorOffsets = [];
+for (let i = 0; i < totalSlices * maxNumSubSlices; i++) {
+  colorOffsets.push(Math.random() * 0.2);
+}
 /* ------------------------ GEOMETRY HELPERS ------------------------ */
 
 function polarToCartesian(cx, cy, r, angle) {
@@ -130,25 +137,27 @@ function polarToCartesian(cx, cy, r, angle) {
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
-function drawSlice(cx, cy, r, color, rotation, groupIndex, sliceIndex) {
-  // console.log('color: ', color)
-  // const start = startAngle + gapBetweenSlices / 2;
-  // const end = endAngle - gapBetweenSlices / 2;
+function drawSlice(cx, cy, r, color, rotationDegrees, groupIndex, sliceIndex) {
 
-  const sliceAngleWithoutGaps = sliceAngle - gapBetweenSlices;
-  const subSliceAngle = sliceAngleWithoutGaps / numSubSlices;
-  const ringThickness = r / numRings;
-  for (let n = 0; n < numRings - 1; n++) { // don't draw the innermost ring so we get a round hole
+  if (checkedList[groupIndex][sliceIndex] === false) {
+    ctx.rotate(rotationDegrees * Math.PI / 180); // still rotate for next slice even if not drawn
+    return; // skip drawing if not checked
+  }
+
+  const ringThickness = (r-centerHoleRadius) / numRings;
+  for (let n = 0; n < numRings; n++) { // don't draw the innermost ring so we get a round hole
+    const numSubSlices = maxNumSubSlices - n; // fewer subslices in inner rings
+    const sliceAngleWithoutGaps = sliceAngle - gapBetweenSlices;
+    const subSliceAngle = sliceAngleWithoutGaps / numSubSlices;
     for (let i = 0; i < numSubSlices; i++) {
-
-      if (checkedList[groupIndex][sliceIndex] === false) {
-        continue; // skip drawing if not checked
+      colorIdx++;
+      if (colorIdx >= colorOffsets.length) {
+        colorIdx = 0;
       }
-
-      // const start = -90 + sliceAngleWithoutGaps + i * subSliceAngle;
-      // const end = start + subSliceAngle;
-      const start = -90 + gapBetweenSlices * 2 - i * subSliceAngle;
+      const start = -90 - sliceAngleWithoutGaps / 2 + i * subSliceAngle;
       const end = start + subSliceAngle;
+      // const start = -90 + gapBetweenSlices * 2 - i * subSliceAngle;
+      // const end = start + subSliceAngle;
 
       const [x1, y1] = polarToCartesian(0, 0, r, start);
       const [x2, y2] = polarToCartesian(0, 0, r, end);
@@ -159,7 +168,7 @@ function drawSlice(cx, cy, r, color, rotation, groupIndex, sliceIndex) {
       // if (i == 0) { // first
       //   ctx.arc(0, 0, r - n * ringThickness, ((start + offset * (n * offsetScale)) * Math.PI) / 180, (end * Math.PI) / 180);
       //   ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, ((start + offset * ((n + 1) * offsetScale)) * Math.PI) / 180, true);
-      // } else if (i == numSubSlices - 1) { // last
+      // } else if (i == maxNumSubSlices - 1) { // last
       //   ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, ((end - offset * (n * offsetScale)) * Math.PI) / 180);
       //   ctx.arc(0, 0, r - (n + 1) * ringThickness, ((end - offset * ((n + 1) * offsetScale)) * Math.PI) / 180, (start * Math.PI) / 180, true);
       // } else { // center
@@ -170,16 +179,10 @@ function drawSlice(cx, cy, r, color, rotation, groupIndex, sliceIndex) {
       ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, (start * Math.PI) / 180, true);
 
       ctx.closePath();
-      const tintedColor = calculateTintAndShade(color, Math.random() * 0.4).tint.hex;
-
-      // if (i == 0) {
-      //   ctx.fillStyle = "blue";
-      // } else if (i == numSubSlices - 1) {
-      //   ctx.fillStyle = "red";
-      // } else {
-      //   ctx.fillStyle = "green"
-      // }
-
+      // const tintedColor = calculateTintAndShade(color, Math.random() * 0.4).tint.hex;
+      // console.log('id: ', groupIndex * maxNumSubSlices * numRings + sliceIndex *  , ': ', colorOffsets[groupIndex * maxNumSubSlices * numRings + sliceIndex]);
+      const tintedColor = calculateTintAndShade(color, colorOffsets[colorIdx] + colorOffset).shade.hex;
+      // const tintedColor = calculateTintAndShade(color, Math.random()).tint.hex;
       ctx.fillStyle = tintedColor;
       ctx.fill();
       ctx.strokeStyle = tintedColor;
@@ -187,7 +190,7 @@ function drawSlice(cx, cy, r, color, rotation, groupIndex, sliceIndex) {
     }
   }
   // Rotate for then next slice
-  ctx.rotate(rotation * Math.PI / 180);
+  ctx.rotate(rotationDegrees * Math.PI / 180);
 }
 
 /* ------------------------ BADGE DRAWING ------------------------ */
@@ -248,12 +251,13 @@ function renderChecklist() {
       checkedList[cb.dataset.groupIndex][cb.dataset.sliceIndex] = cb.checked;
 
       // console.log('selected', cb.dataset.groupIndex);
-      console.log('group index', cb.dataset.groupIndex);
-      console.log('slice index', cb.dataset.sliceIndex);
+      // console.log('group index', cb.dataset.groupIndex);
+      // console.log('slice index', cb.dataset.sliceIndex);
       const rotationIndex = parseInt(cb.dataset.groupIndex) * 3 + parseInt(cb.dataset.sliceIndex);
-      console.log("rotation index: ", rotationIndex);
+      // console.log("rotation index: ", rotationIndex);
       rotationTarget = rotationIndex * -sliceAngle;
-      console.log("new rotation target: ", rotationTarget);
+      console.log('rotationTarget: ', rotationTarget)
+      // console.log("new rotation target: ", rotationTarget);
       updateBadge();
     });
   });
@@ -291,19 +295,26 @@ updateBadge();
 
 
 function rotateBadge() {
+  colorIdx = 0;
   if (rotationAngle !== rotationTarget) {
     const diff = rotationTarget - rotationAngle;
     if (Math.abs(diff) < 0.1) {
       rotationAngle = rotationTarget; // Snap to target if close enough
     } else {
-      rotationAngle += diff * 0.01; // Ease towards the target
+      // rotationAngle += diff * 0.01; // Ease towards the target
       // Determine the shortest rotation direction
       const normalizedDiff = ((rotationTarget - rotationAngle) + 360) % 360;
       const shortestRotation = normalizedDiff > 180 ? normalizedDiff - 360 : normalizedDiff;
 
-      rotationAngle += shortestRotation * 0.1; // Ease towards the target
+      rotationAngle += shortestRotation * 0.05; // Ease towards the target
     }
   }
+
+  colorOffset += 0.001 * colorOffsetDir;
+  if (colorOffset >= 0.2 || colorOffset <= 0) {
+    colorOffsetDir *= -1;
+  }
+
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // ctx.fillStyle = "#1d1c1c";
@@ -323,15 +334,17 @@ function rotateBadge() {
 
   let sliceIndex = 0;
   const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
-  const sliceAngle = 360 / totalSlices;
-  // const sliceAngleRad = sliceAngle * (Math.PI / 180);
+  const sliceAngleDegrees = 360 / totalSlices;
+  // const sliceAngleDegreesRad = sliceAngle * (Math.PI / 180);
   // const sliceAngleRad = 0;
+  // ctx.rotate(-rotationDegrees * Math.PI / 180); // reset rotation for each ring
+
   sectionsData.forEach((section, i) => {
+    // console.log('section: ', section, i)
     section.items.forEach((item, n) => {
-      // if (i !== 0 || n !== 0) {
-      //   return
-      // }
-      drawSlice(cx, cy, r, item.color, sliceAngle, i, n);
+      // console.log('item: ', item, n)
+      // console.log('call drawSlice with: ', i, n)
+      drawSlice(cx, cy, r, item.color, sliceAngleDegrees, i, n);
       sliceIndex++;
     });
     // Clear a circle in the middle of the canvas
