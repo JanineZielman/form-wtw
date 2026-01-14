@@ -45,195 +45,171 @@ const sectionsData = [
 
 /* ------------------------ CONFIG ------------------------ */
 
+const canvas = document.getElementById("badge");
+const ctx = canvas.getContext("2d");
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = "#ffffff";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+const gapBetweenSlices = 2; // degrees between slices
+const cx = canvas.width / 2;
+const cy = canvas.height / 2;
+const r = canvas.height / 2 - 10; // radius of badge
+const numRings = 8; // number of rings per slice
+const numSubSlices = 3; // number of subslices per ring
+const centerHoleRadius = 10;
+
+
 const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
 const sliceAngle = 360 / totalSlices;
+let rotationAngle = 0;
+let rotationTarget = 0;
 
-let allSelected = checkAllSelected();
-const gapBetweenSlices = 6; // degrees between slices
-const cx = 300, cy = 300, r = 280; // badge center and radius
-const badge = document.getElementById("badge");
 
-// Slice pattern settings
-const ringCount = 6;      // number of concentric rings
-const angularSteps = 3;   // number of angular divisions per slice
-const density = 0.12;     // only 12% of cells filled → very holey look
-const dynamicGap = 3.5;   // bigger gaps between slices
-const ringGap = 4;        // gap inbetween rings on the same slice
 
+/* ------------------------ COLOR HELPERS ------------------------ */
+const calculateTintAndShade = (
+  hexColor, // using #663399 as an example
+  percentage = 0.1 // using 10% as an example
+) => {
+  const r = parseInt(hexColor.slice(1, 3), 16); // r = 102
+  const g = parseInt(hexColor.slice(3, 5), 16); // g = 51
+  const b = parseInt(hexColor.slice(5, 7), 16); // b = 153
+
+  /*
+     From this part, we are using our two formulas
+     in this case, here is the formula for tint,
+     please be aware that we are performing two validations
+     we are using Math.min to set the max level of tint to 255,
+     so we don't get values like 280 ;)
+     also, we have the Math.round so we don't have values like 243.2
+     both validations apply for both tint and shade as you can see */
+  const tintR = Math.round(Math.min(255, r + (255 - r) * percentage)); // 117
+  const tintG = Math.round(Math.min(255, g + (255 - g) * percentage)); // 71
+  const tintB = Math.round(Math.min(255, b + (255 - b) * percentage)); // 163
+
+
+  const shadeR = Math.round(Math.max(0, r - r * percentage)); // 92
+  const shadeG = Math.round(Math.max(0, g - g * percentage)); // 46
+  const shadeB = Math.round(Math.max(0, b - b * percentage)); // 138
+
+
+  /*
+     Now with all the values calculated, the only missing stuff is
+     getting our color back to hexadecimal, to achieve that, we are going
+     to perform a toString(16) on each value, so we get the hex value
+     for each color, and then we just append each value together and voilà!*/
+  return {
+    tint: {
+      r: tintR,
+      g: tintG,
+      b: tintB,
+      hex:
+        '#' +
+        [tintR, tintG, tintB]
+          .map(x => x.toString(16).padStart(2, '0'))
+          .join(''), // #7547a3
+    },
+    shade: {
+      r: shadeR,
+      g: shadeG,
+      b: shadeB,
+      hex:
+        '#' +
+        [shadeR, shadeG, shadeB]
+          .map(x => x.toString(16).padStart(2, '0'))
+          .join(''), // #5c2e8a
+    },
+  };
+};
 
 /* ------------------------ GEOMETRY HELPERS ------------------------ */
 
-function checkAllSelected() {
-  return sectionsData.filter((section) => section.items.every((item) => item.state === "on")).length === sectionsData.length;
-}
-// Convert polar → cartesian
 function polarToCartesian(cx, cy, r, angle) {
   const rad = angle * Math.PI / 180;
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
 }
 
-// Slice shape with angular gap built in
-function createSlicePath(cx, cy, r, startAngle, endAngle) {
-  const start = startAngle + gapBetweenSlices / 2;
-  const end = endAngle - gapBetweenSlices / 2;
+function drawSlice(cx, cy, r, color, rotation, groupIndex, sliceIndex) {
+  // console.log('color: ', color)
+  // const start = startAngle + gapBetweenSlices / 2;
+  // const end = endAngle - gapBetweenSlices / 2;
 
-  const [x1, y1] = polarToCartesian(cx, cy, r, start);
-  const [x2, y2] = polarToCartesian(cx, cy, r, end);
-  const largeArc = end - start <= 180 ? 0 : 1;
+  const sliceAngleWithoutGaps = sliceAngle - gapBetweenSlices;
+  const subSliceAngle = sliceAngleWithoutGaps / numSubSlices;
+  const ringThickness = r / numRings;
+  for (let n = 0; n < numRings - 1; n++) { // don't draw the innermost ring so we get a round hole
+    for (let i = 0; i < numSubSlices; i++) {
 
-  return `M ${cx} ${cy}
-          L ${x1} ${y1}
-          A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}
-          Z`;
-}
+      if (checkedList[groupIndex][sliceIndex] === false) {
+        continue; // skip drawing if not checked
+      }
 
-/* ------------------------ PATTERN GENERATION ------------------------ */
-function updateSlicePattern(sliceIndex) {
+      // const start = -90 + sliceAngleWithoutGaps + i * subSliceAngle;
+      // const end = start + subSliceAngle;
+      const start = -90 + gapBetweenSlices * 2 - i * subSliceAngle;
+      const end = start + subSliceAngle;
 
-  /* --- Determine which category this slice belongs to --- */
-  // 5 categories × each category = 3 slices
-  const category = Math.floor(sliceIndex / 3);
+      const [x1, y1] = polarToCartesian(0, 0, r, start);
+      const [x2, y2] = polarToCartesian(0, 0, r, end);
 
-  /* Count how many of the 3 checklist items in this category are checked */
-  let checks = 0;
-  for (let i = 0; i < 3; i++) {
-    const key = `${i}-${category}`;
-    if (localStorage.getItem(key) === "1") checks++;
-  }
-  console.log('checks for slice', sliceIndex, ':', checks);
+      ctx.beginPath();
+      // const offset = 2;
+      // const offsetScale = 1;
+      // if (i == 0) { // first
+      //   ctx.arc(0, 0, r - n * ringThickness, ((start + offset * (n * offsetScale)) * Math.PI) / 180, (end * Math.PI) / 180);
+      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, ((start + offset * ((n + 1) * offsetScale)) * Math.PI) / 180, true);
+      // } else if (i == numSubSlices - 1) { // last
+      //   ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, ((end - offset * (n * offsetScale)) * Math.PI) / 180);
+      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, ((end - offset * ((n + 1) * offsetScale)) * Math.PI) / 180, (start * Math.PI) / 180, true);
+      // } else { // center
+      //   ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, (end * Math.PI) / 180);
+      //   ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, (start * Math.PI) / 180, true);
+      // }
+      ctx.arc(0, 0, r - n * ringThickness, (start * Math.PI) / 180, (end * Math.PI) / 180);
+      ctx.arc(0, 0, r - (n + 1) * ringThickness, (end * Math.PI) / 180, (start * Math.PI) / 180, true);
 
-  /* --- Map checked items to visual parameters --- */
-  // You can tune these values to taste
-  const dynamicGap = [3.0, 2.0, 1.1, 0.4][checks];          // degrees
-  const ringCount = [2, 3, 4, 5][checks];              // more rings = smaller cells
-  const angularSteps = [2, 3, 4, 5][checks];             // more angular divisions
-  const density = [0.25, 0.38, 0.50, 0.68][checks];         // chance a cell gets filled
+      ctx.closePath();
+      const tintedColor = calculateTintAndShade(color, Math.random() * 0.4).tint.hex;
 
-  for (let ri = 0; ri < ringCount; ri++) {
-    const innerR = (ri / ringCount) * r;
-    const outerR = ((ri + 1) / ringCount) * r;
-
-    for (let ai = 0; ai < angularSteps; ai++) {
-      // let opacity = 1.0;
-      // if (checks === 0) {
-      //   opacity = 0.0;
+      // if (i == 0) {
+      //   ctx.fillStyle = "blue";
+      // } else if (i == numSubSlices - 1) {
+      //   ctx.fillStyle = "red";
       // } else {
-      //   //   opacity = Math.min(1.0, 0.2 + Math.random());
+      //   ctx.fillStyle = "green"
       // }
 
-      const cellId = `slice-${sliceIndex}-cell-${ri}-${ai}`;
-      const cell = document.getElementById(cellId);
-      if (cell) {
-        cell.setAttribute("opacity", opacity);
-      } else {
-        console.log('no cell!');
-      }
+      ctx.fillStyle = tintedColor;
+      ctx.fill();
+      ctx.strokeStyle = tintedColor;
+      ctx.stroke();
     }
   }
+  // Rotate for then next slice
+  ctx.rotate(rotation * Math.PI / 180);
 }
-
-
-/* ------------------------ PATTERN FOR UNCHECKED SLICES ------------------------ */
-function generateSlicePattern(sliceIndex, color) {
-
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("id", `slice-${sliceIndex}`);
-
-  const rawStart = -90 + sliceIndex * sliceAngle;
-  const rawEnd = rawStart + sliceAngle;
-
-  /* --- CLIP PATH --- */
-  const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-  clip.setAttribute("id", `clip-empty-${sliceIndex}`);
-
-  const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  clipPath.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
-  clip.appendChild(clipPath);
-  badge.appendChild(clip);
-
-  const container = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  container.setAttribute("clip-path", `url(#clip-empty-${sliceIndex})`);
-
-  /* --- POLAR GRID WITH VERY LARGE CELLS --- */
-  const angleSpan = (rawEnd - rawStart) - dynamicGap;
-  const angleStart = rawStart + dynamicGap / 2;
-
-  for (let ri = 0; ri < ringCount; ri++) {
-    const innerR = (ri / ringCount) * r;
-    const outerR = ((ri + 1) / ringCount) * r - ringGap;
-
-    let angularSteps = ri;
-
-    for (let ai = 0; ai < angularSteps; ai++) {
-
-      const a1 = angleStart + (ai / angularSteps) * angleSpan;
-      const a2 = angleStart + ((ai + 1) / angularSteps) * angleSpan;
-
-      const [x1, y1] = polarToCartesian(cx, cy, innerR, a1);
-      const [x2, y2] = polarToCartesian(cx, cy, outerR, a1);
-      const [x3, y3] = polarToCartesian(cx, cy, outerR, a2);
-      const [x4, y4] = polarToCartesian(cx, cy, innerR, a2);
-
-      const largeArc = (a2 - a1) <= 180 ? 0 : 1;
-
-      const cellPath = `
-          M ${x1} ${y1}
-          L ${x2} ${y2}
-          A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3} ${y3}
-          L ${x4} ${y4}
-          A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1} ${y1}
-          Z
-        `;
-
-      const cell = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      cell.id = `slice-${sliceIndex}-cell-${ri}-${ai}`;
-      cell.classList.add("sliceSection");
-      cell.setAttribute("d", cellPath.trim());
-      cell.setAttribute("stroke", color); // lighter gray for incomplete
-      cell.setAttribute("fill", color); // lighter gray for incomplete
-      // cell.setAttribute("opacity", 0.0);
-      cell.setAttribute("opacity", Math.random());
-      container.appendChild(cell);
-    }
-  }
-
-  /* OUTLINE */
-  // const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  // outline.setAttribute("d", createSlicePath(cx, cy, r, rawStart, rawEnd));
-  // outline.setAttribute("fill", "none");
-  // outline.setAttribute("stroke", "black");
-  // outline.setAttribute("stroke-width", "1.3");
-
-  group.appendChild(container);
-  // group.appendChild(outline);
-
-  return group;
-}
-
 
 /* ------------------------ BADGE DRAWING ------------------------ */
 
 function drawBadge() {
-  badge.innerHTML = "";
-  for (let i = 0; i < totalSlices; i++) {
-    const start = i * (360 / totalSlices) - 90;
-    const end = (i + 1) * (360 / totalSlices) - 90;
+  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // ctx.fillStyle = "#ffffff";
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const pathData = createSlicePath(cx, cy, r, start, end);
-
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", pathData);
-    path.setAttribute("fill", "gray");
-    path.setAttribute("stroke", "black");
-    path.setAttribute("stroke-width", "1.3");
-    path.setAttribute("id", `slice-${i}`);
-
-    badge.appendChild(path);
-  }
+  // let sliceIndex = 0;
+  // sectionsData.forEach((section) => {
+  //   section.items.forEach((item) => {
+  //     const start = sliceIndex * sliceAngle - 90;
+  //     const end = (sliceIndex + 1) * sliceAngle - 90;
+  //     drawSlice(cx, cy, r, start, end, item.color);
+  //     sliceIndex++;
+  //   });
+  // });
 }
 
 /* ------------------------ CHECKLIST ------------------------ */
-
+let checkedList = [];
 const checklist = document.getElementById("checklist");
 function renderChecklist() {
   checklist.innerHTML = "";
@@ -246,7 +222,7 @@ function renderChecklist() {
       const checked = localStorage.getItem(key) === "1";
       div.innerHTML += `<label class="item">
           <span class="checkbox-container">
-            <input type="checkbox" data-group-index="${sectionIndex}" data-key="${key}" ${checked ? "checked" : ""}/>
+            <input type="checkbox" data-group-index="${sectionIndex}" data-slice-index="${r}" data-key="${key}" ${checked ? "checked" : ""}/>
           </span>
         ${item.title}
       </label>`;
@@ -254,88 +230,123 @@ function renderChecklist() {
     checklist.appendChild(div);
   });
 
+  for (let sectionIndex = 0; sectionIndex < sectionsData.length; sectionIndex++) {
+    const section = sectionsData[sectionIndex];
+    checkedList[sectionIndex] = [false, false, false];
+    for (let itemIndex = 0; itemIndex < section.items.length; itemIndex++) {
+      const key = `${itemIndex}-${sectionIndex}`;
+      const checked = localStorage.getItem(key) === "1";
+      if (checked) {
+        checkedList[sectionIndex][itemIndex] = true;
+      }
+    }
+  }
+
   document.querySelectorAll("input[data-key]").forEach(cb => {
     cb.addEventListener("change", () => {
       localStorage.setItem(cb.dataset.key, cb.checked ? "1" : "0");
-      const currentRotation = parseFloat(badge.style.rotate) || 0;
-      const targetRotation = cb.dataset.groupIndex * (360 / totalSlices);
-      const delta = ((targetRotation - currentRotation + 540) % 360) - 180;
-      if (delta > 0) { // TODO: fix rotation direction properly; should take the fastest direction
-        badge.style.rotate = `${((cb.dataset.groupIndex * -sliceAngle) - (sliceAngle / 2))}deg`;
-      } else {
-        badge.style.rotate = `${((cb.dataset.groupIndex * -sliceAngle) - (sliceAngle / 2))}deg`;
-      }
-      // updateSlicePattern(cb.dataset.groupIndex * 3);
-      // updateSlicePattern(cb.dataset.groupIndex * 3 + 1);
-      // updateSlicePattern(cb.dataset.groupIndex * 3 + 2);
+      checkedList[cb.dataset.groupIndex][cb.dataset.sliceIndex] = cb.checked;
+
+      // console.log('selected', cb.dataset.groupIndex);
+      console.log('group index', cb.dataset.groupIndex);
+      console.log('slice index', cb.dataset.sliceIndex);
+      const rotationIndex = parseInt(cb.dataset.groupIndex) * 3 + parseInt(cb.dataset.sliceIndex);
+      console.log("rotation index: ", rotationIndex);
+      rotationTarget = rotationIndex * -sliceAngle;
+      console.log("new rotation target: ", rotationTarget);
       updateBadge();
     });
   });
 }
 
-/* ------------------------ CREATE BADGE ------------------------ */
-function createBadge() {
-  sectionsData.forEach((section, sectionIndex) => {
-    section.items.forEach((item, itemIndex) => {
-      const key = `${itemIndex}-${sectionIndex}`;
-      // Todo: length of 3 is hardcoded. Might be fine if we don't update the checklist anymore,
-      // otherwise we should make this dynamic.
-      badge.appendChild(generateSlicePattern((sectionIndex * 3) + itemIndex, item.color));
-    });
-  });
-
-  // const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  // centerCircle.setAttribute("cx", cx);
-  // centerCircle.setAttribute("cy", cy);
-  // centerCircle.setAttribute("r", 20); // Adjust radius as needed
-  // centerCircle.setAttribute("fill", "#313030"); // White fill
-  // badge.appendChild(centerCircle);
-}
 
 /* ------------------------ UPDATE BADGE ------------------------ */
 
 function updateBadge() {
-  let everythingChecked = true; // assume true
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 5; c++) {
-      const index = r + c * 3;
-      const key = `${r}-${c}`;
-      const on = localStorage.getItem(key) === "1";
-      console.log('on: ', on)
-      console.log('is on? ', on);
-      if (!on) {
-        everythingChecked = false;
-      }
-      const slice = document.getElementById(`slice-${index}`);
-      updateSlicePattern(index);
-    }
-  }
-
-  /* ---- SPINNING LOGIC ---- */
-  if (everythingChecked) {
-    console.log('everything checked! spinning badge.');
-    badge.classList.add("spinning");
-  } else {
-    console.log('not everything checked. stop spinning.');
-    badge.classList.remove("spinning");
-  }
+  drawBadge();
+  let sliceIndex = 0;
+  sectionsData.forEach((section, sectionIndex) => {
+    section.items.forEach((item, itemIndex) => {
+      const key = `${itemIndex}-${sectionIndex}`;
+      const checked = localStorage.getItem(key) === "1";
+      const start = sliceIndex * sliceAngle - 90;
+      const end = (sliceIndex + 1) * sliceAngle - 90;
+      // drawSlice(cx, cy, r, start, end, checked ? item.color : "gray");
+      sliceIndex++;
+    });
+  });
 }
-
-
-/* ------------------------ RESET ------------------------ */
-
-// document.getElementById("resetBtn").onclick = () => {
-//   if (confirm("Reset badge?")) {
-//     localStorage.clear();
-//     drawBadge();
-//     renderChecklist();
-//     updateBadge();
-//   }
-// };
 
 /* ------------------------ INIT ------------------------ */
 
-// drawBadge();
+// Track mouse position globally
+window.mouseX = 0;
+window.addEventListener("mousemove", (event) => {
+  window.mouseX = event.clientX;
+});
+
 renderChecklist();
-createBadge();
+drawBadge();
 updateBadge();
+
+
+function rotateBadge() {
+  if (rotationAngle !== rotationTarget) {
+    const diff = rotationTarget - rotationAngle;
+    if (Math.abs(diff) < 0.1) {
+      rotationAngle = rotationTarget; // Snap to target if close enough
+    } else {
+      rotationAngle += diff * 0.01; // Ease towards the target
+      // Determine the shortest rotation direction
+      const normalizedDiff = ((rotationTarget - rotationAngle) + 360) % 360;
+      const shortestRotation = normalizedDiff > 180 ? normalizedDiff - 360 : normalizedDiff;
+
+      rotationAngle += shortestRotation * 0.1; // Ease towards the target
+    }
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // ctx.fillStyle = "#1d1c1c";
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate((rotationAngle * Math.PI) / 180);
+  // ctx.rotate((rotationAngle * Math.PI) / 180);
+  // ctx.translate(-cx, -cy);
+
+  // ctx.beginPath();
+  // ctx.arc(0, 0, 40, 0, 2 * Math.PI);
+  // ctx.closePath();
+  // ctx.strokeStyle = "red";
+  // ctx.stroke();
+
+  let sliceIndex = 0;
+  const totalSlices = sectionsData.reduce((sum, section) => sum + section.items.length, 0);
+  const sliceAngle = 360 / totalSlices;
+  // const sliceAngleRad = sliceAngle * (Math.PI / 180);
+  // const sliceAngleRad = 0;
+  sectionsData.forEach((section, i) => {
+    section.items.forEach((item, n) => {
+      // if (i !== 0 || n !== 0) {
+      //   return
+      // }
+      drawSlice(cx, cy, r, item.color, sliceAngle, i, n);
+      sliceIndex++;
+    });
+    // Clear a circle in the middle of the canvas
+  });
+  ctx.restore();
+  // rotationAngle = (rotationAngle + 1) % 360;
+
+  // ctx.globalCompositeOperation = "destination-out";
+  // ctx.beginPath();
+  // ctx.arc(cx, cy, centerHoleRadius, 0, 2 * Math.PI);
+  // ctx.fillStyle = "white";
+  // ctx.fill();
+  // ctx.globalCompositeOperation = "source-over";
+
+  requestAnimationFrame(rotateBadge);
+}
+
+rotateBadge();
